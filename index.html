@@ -234,9 +234,12 @@
   .szall-csempe { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; padding:12px 6px 10px;
                   text-align:center; cursor:pointer; color:var(--text); font:inherit; }
   .szall-csempe:active { transform:translateY(1px); }
-  .szall-lakat { font-size:1.9rem; line-height:1; opacity:.85; margin-bottom:auto; padding-top:2px; }
-  .kamion { width:100%; max-width:92px; height:auto; display:block; }
-  .kamion .k-test, .kamion .k-kerekek circle { fill:var(--text); }
+  .szall-lakat { width:26px; height:30px; margin-bottom:auto; margin-top:2px; opacity:.45; }
+  .szall-lakat .l-kengyel { fill:none; stroke:var(--muted); stroke-width:3; stroke-linecap:round; }
+  .szall-lakat .l-test { fill:var(--muted); }
+  .szall-lakat .l-lyuk { fill:var(--card); }
+  .kamion { width:100%; max-width:92px; height:auto; display:block; opacity:.45; }
+  .kamion .k-test, .kamion .k-kerekek circle { fill:var(--muted); }
   .kamion .k-kerekek circle { stroke:var(--card); stroke-width:2; }
   .kamion .k-lyuk { fill:var(--card); }
   .szall-szoveg b { font-size:clamp(.74rem, 3.5vw, .95rem); line-height:1.1; display:block; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
@@ -277,7 +280,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.5</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.6</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -309,7 +312,11 @@
       </div>
     </section>
     <button type="button" class="card szall-csempe" id="szallCsempe" aria-label="Fuel delivery (password protected)">
-      <span class="szall-lakat" aria-hidden="true">🔒</span>
+      <svg class="szall-lakat" viewBox="0 0 24 28" aria-hidden="true">
+        <path d="M6.5 12 V8 a5.5 5.5 0 0 1 11 0 V12" class="l-kengyel"/>
+        <rect x="2.5" y="12" width="19" height="14" rx="3" class="l-test"/>
+        <circle cx="12" cy="18" r="2" class="l-lyuk"/><rect x="11" y="18.5" width="2" height="4" rx="1" class="l-lyuk"/>
+      </svg>
       <svg class="kamion" viewBox="0 0 100 58" aria-hidden="true">
         <!-- fuel tanker pictogram (solid silhouette, cab on the left) -->
         <path class="k-test" d="M30 7 Q19 7.5 13.5 13.5 L8 14.5 Q4.5 15 4.5 19 V43 Q4.5 46.5 7.5 46.5 H30 Z"/>

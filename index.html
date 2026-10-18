@@ -91,7 +91,16 @@
   .tartaly-adat .allapot { margin-top:6px; font-weight:600; }
   #skala line { stroke:var(--tartaly-keret); stroke-width:1; }
   #skala text { paint-order:stroke; stroke:var(--tartaly-ures); stroke-width:2px; stroke-linejoin:round; fill:var(--muted); font-size:7.5px; font-weight:300; dominant-baseline:middle; font-variant-numeric:tabular-nums; }
-  .ket-oszlop .grafikon { padding:8px 10px; }
+  .ket-oszlop .utolso5 { padding:5px 9px; height:70px; overflow:hidden; justify-content:flex-start; gap:1px; }
+  .ket-oszlop .utolso5 .u5-cim { font-size:.56rem; line-height:1; margin-bottom:1px; white-space:nowrap; }
+  #utolso5 { list-style:none; margin:0; padding:0; font-size:9.5px; line-height:10px; font-variant-numeric:tabular-nums; }
+  #utolso5 li { display:grid; grid-template-columns:28px 38px 23px minmax(0,1fr); gap:2px; white-space:nowrap; letter-spacing:-.1px; }
+  .ket-oszlop .info #utolso5 li > span { overflow:hidden; text-overflow:ellipsis; font-size:9px; line-height:10px; color:var(--text); }
+  .ket-oszlop .info #utolso5 .d { color:var(--muted); }
+  #utolso5 .g { font-weight:600; }
+  .ket-oszlop .info #utolso5 .l { color:var(--sarga); font-weight:700; text-align:right; }
+  .ket-oszlop .info #utolso5 .n { color:var(--muted); }
+  #utolso5 .ures { color:var(--muted); display:block; }
   .ket-oszlop .grafikon span { white-space:nowrap; font-size:.72rem; }
   .grafikon svg { width:100%; height:auto; display:block; margin-top:2px; overflow:visible; }
   #graf .oszl { fill:none; stroke:var(--zold); stroke-width:.6; }
@@ -158,7 +167,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.1.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.2.0</span></div>
 
   <section class="card tartaly-kartya" id="tartalyKartya">
     <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
@@ -252,8 +261,8 @@
 
         <div class="info"><span>Last meter reading</span><b id="utolso">…</b></div>
         <div class="info big"><span>Fuel pumped</span><b id="mennyiseg">–</b></div>
-        <div class="info grafikon"><span id="grafCim">Last 14 days</span>
-          <svg id="graf" viewBox="0 0 140 40" role="img" aria-label="Fuel pumped per day, last 14 days"></svg>
+        <div class="info utolso5"><span class="u5-cim">Last 5 refuels</span>
+          <ol id="utolso5" aria-label="Last 5 refuels"></ol>
         </div>
       </div>
     </div>
@@ -346,7 +355,7 @@ function skala() {
 function nap(d) { return d.slice(8, 10) + '/' + d.slice(5, 7); }  // 'yyyy.MM.dd' -> 'dd/MM'
 function grafikon() {
   const NS = 'http://www.w3.org/2000/svg', g = $('graf');
-  g.innerHTML = '';
+  if (g) g.innerHTML = '';
   if (!napi.length || (DEMO_ADAT && !napi.demo)) {
     const valodi = napi; napi = [];
     const ma = new Date();
@@ -358,6 +367,7 @@ function grafikon() {
     }
     napi.demo = DEMO_ADAT;
   }
+  if (!g) { trend(); return; }   // the 14-day chart was replaced by the last-5 list; data still feeds the trend arrow
   const el = (tag, attr, szoveg) => { const e = document.createElementNS(NS, tag);
     for (const k in attr) e.setAttribute(k, attr[k]); if (szoveg !== undefined) e.textContent = szoveg; g.append(e); return e; };
   const X0 = 14, X1 = 140, Y0 = 32, Y1 = 3;                 // plot area
@@ -414,8 +424,27 @@ function grafMutat(i) {
   const n = napi[i];
   $('grafCim').textContent = `${nap(n.d)}: ${fmt(n.l)} l`;
 }
-$('graf').addEventListener('pointermove', e => { const i = e.target.dataset && e.target.dataset.i; if (i !== undefined) grafMutat(+i); });
-$('graf').addEventListener('pointerleave', () => grafMutat(null));
+// --- Last 5 refuels: date, registration, litres, name ---
+let utolsok = [];
+const DEMO_UTOLSOK = [
+  { d: '18/10', g: 'HA-FBL', l: 133, n: 'Kiss Péter' }, { d: '17/10', g: 'OM-DJS', l: 56, n: 'Nagy Anna' },
+  { d: '16/10', g: 'HA-SGK', l: 180, n: 'Tóth Gábor' }, { d: '15/10', g: 'HA-TUS', l: 84, n: 'Kiss Péter' },
+  { d: '14/10', g: 'OK-TOG', l: 110, n: 'Szabó Éva' }];
+// "Kiss Péter" -> "Kiss P." so the name fits the narrow column (full name in the tooltip)
+function rovidNev(n) { const r = String(n || '').trim().split(/\s+/); return r.length > 1 ? r[0] + ' ' + r[1][0] + '.' : r[0]; }
+function utolso5() {
+  const lista = utolsok.length ? utolsok : (DEMO_ADAT ? DEMO_UTOLSOK : []);
+  const ol = $('utolso5'); ol.innerHTML = '';
+  if (!lista.length) { ol.innerHTML = '<li class="ures">No refuels yet</li>'; return; }
+  lista.slice(0, 5).forEach(x => {
+    const li = document.createElement('li');
+    [['d', x.d], ['g', String(x.g).replace(/ \((foreign|idegen)\)$/, '*')], ['l', fmt(Math.round(x.l)) + ' l'], ['n', rovidNev(x.n)]].forEach(([c, t]) => {
+      const sp = document.createElement('span'); sp.className = c; sp.textContent = t; sp.title = t; li.append(sp);
+    });
+    li.title = `${x.d} · ${x.g} · ${fmt(x.l)} l · ${x.n}`;
+    ol.append(li);
+  });
+}
 
 // --- Monthly pie: fuel per aircraft. Swipe (or ‹ ›) between the last 12 months ---
 let havi = {};
@@ -806,6 +835,7 @@ async function betolt() {
     idegenValt(false);
     utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
     if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
+    if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
     if (d.havi) { havi = d.havi; torta(); }
     $('utolso').textContent = fmt(utolso);
     tartaly(keszlet);
@@ -856,6 +886,7 @@ $('urlap').addEventListener('submit', async ev => {
     keszlet = d.keszlet; tartaly(keszlet);
     hobbsMap[lajstrom] = hobbs;
     if (napi.length) { napi[napi.length - 1].l += d.mennyiseg; grafikon(); }
+    { const m = new Date(); utolsok.unshift({ d: String(m.getDate()).padStart(2, '0') + '/' + String(m.getMonth() + 1).padStart(2, '0'), g: lajstrom, l: d.mennyiseg, n: nev }); utolso5(); }
     { const k = hoKulcs(new Date()), g = valasztott === 'IDEGEN' ? 'FOREIGN' : valasztott;
       havi[k] = havi[k] || {}; havi[k][g] = (havi[k][g] || 0) + d.mennyiseg; torta(); }
     $('zaro').value = ''; $('zaro').classList.remove('olvasott');
@@ -874,6 +905,7 @@ try { $('nev').value = localStorage.getItem('nev') || ''; } catch (e) {}
 $('utolso').textContent = fmt(utolso);
 tartaly(keszlet);
 grafikon();
+utolso5();
 torta();
 uresJeloles();
 betolt();

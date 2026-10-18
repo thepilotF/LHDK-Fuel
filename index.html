@@ -28,6 +28,29 @@
   .info { display:flex; justify-content:space-between; gap:8px; padding:10px 12px; margin-top:14px; border-radius:8px; background:var(--bg); font-size:1rem; }
   .info b { font-variant-numeric:tabular-nums; text-align:right; }
   .big b { font-size:1.3rem; color:var(--accent); }
+  /* Fuel pumped: high-tech pictogram card with an aircraft being refuelled */
+  .ket-oszlop .info.pumpa { padding:9px 10px 10px; gap:0; }
+  .pumpa .gep { width:100%; height:auto; display:block; margin:4px 0 2px; overflow:visible; }
+  .pumpa .gep .ures-test { fill:color-mix(in srgb, var(--accent) 7%, transparent); }
+  .pumpa .gep .uzemanyag { fill:var(--sarga); opacity:.85; transition:y 1s cubic-bezier(.4,0,.2,1); }
+  .pumpa .gep .korvonal { fill:none; stroke:#5fd4ff; stroke-width:.9; stroke-linejoin:round; }
+  .pumpa .gep .korvonal-feny { fill:none; stroke:#5fd4ff; stroke-width:2.6; opacity:.35; }
+  .pumpa .gep .panel { stroke:#5fd4ff; stroke-width:.5; opacity:.6; }
+  .pumpa .gep .proppeller { fill:none; stroke:#5fd4ff; stroke-width:.8; opacity:.8; transform-origin:60px 3px; animation: prop .18s linear infinite; }
+  @keyframes prop { 0%,100% { transform:scaleX(1); } 50% { transform:scaleX(.15); } }
+  .pumpa .gep .szken { stroke:#5fd4ff; stroke-width:.5; opacity:.6; animation: szken 2.6s ease-in-out infinite; }
+  @keyframes szken { 0%,100% { transform:translateY(-32px); opacity:0; } 15%,85% { opacity:.6; } 50% { transform:translateY(32px); } }
+  .pumpa .gep .gep-test { animation: lebeg 3.2s ease-in-out infinite; }
+  @keyframes lebeg { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-1.5px); } }
+  .pumpa .gep .cso path { stroke:var(--muted); stroke-width:1.2; fill:none; }
+  .pumpa .gep .cso .fej { fill:var(--muted); stroke:none; }
+  .pumpa .gep .cso, .pumpa .gep .cseppek { opacity:0; transition:opacity .4s; }
+  .pumpa.tolt .gep .cso, .pumpa.tolt .gep .cseppek { opacity:1; }
+  .pumpa .gep .cseppek circle { fill:var(--sarga); animation: csepp 1s linear infinite; }
+  .pumpa .gep .cseppek circle:nth-child(2) { animation-delay:.33s; } .pumpa .gep .cseppek circle:nth-child(3) { animation-delay:.66s; }
+  @keyframes csepp { from { transform:translateY(0); opacity:1; } to { transform:translateY(18px); opacity:0; } }
+  .pumpa b#mennyiseg { font-size:1.35rem; }
+  @media (prefers-reduced-motion: reduce) { .pumpa .gep * { animation:none !important; } }
   .megj { font-size:.85rem; color:var(--muted); margin-top:6px; min-height:1.1em; }
   .ok { color:var(--ok); } .err { color:var(--err); }
 
@@ -91,16 +114,6 @@
   .tartaly-adat .allapot { margin-top:6px; font-weight:600; }
   #skala line { stroke:var(--tartaly-keret); stroke-width:1; }
   #skala text { paint-order:stroke; stroke:var(--tartaly-ures); stroke-width:2px; stroke-linejoin:round; fill:var(--muted); font-size:7.5px; font-weight:300; dominant-baseline:middle; font-variant-numeric:tabular-nums; }
-  .ket-oszlop .utolso5 { padding:5px 9px; height:70px; overflow:hidden; justify-content:flex-start; gap:1px; }
-  .ket-oszlop .utolso5 .u5-cim { font-size:.56rem; line-height:1; margin-bottom:1px; white-space:nowrap; }
-  #utolso5 { list-style:none; margin:0; padding:0; font-size:9.5px; line-height:10px; font-variant-numeric:tabular-nums; }
-  #utolso5 li { display:grid; grid-template-columns:28px 38px 23px minmax(0,1fr); gap:2px; white-space:nowrap; letter-spacing:-.1px; }
-  .ket-oszlop .info #utolso5 li > span { overflow:hidden; text-overflow:ellipsis; font-size:9px; line-height:10px; color:var(--text); }
-  .ket-oszlop .info #utolso5 .d { color:var(--muted); }
-  #utolso5 .g { font-weight:600; }
-  .ket-oszlop .info #utolso5 .l { color:var(--sarga); font-weight:700; text-align:right; }
-  .ket-oszlop .info #utolso5 .n { color:var(--muted); }
-  #utolso5 .ures { color:var(--muted); display:block; }
   .ket-oszlop .grafikon span { white-space:nowrap; font-size:.72rem; }
   .grafikon svg { width:100%; height:auto; display:block; margin-top:2px; overflow:visible; }
   #graf .oszl { fill:none; stroke:var(--zold); stroke-width:.6; }
@@ -116,17 +129,64 @@
   .alacsony .hullam { animation-duration: 1.6s; }
   @media (prefers-reduced-motion: reduce) { .hullam { animation:none; } #folyadek { transition:none; } }
 
-  /* Monthly pie chart: fuel per aircraft, swipe between months */
-  .torta-kartya { padding:14px 0 10px; }
-  .torta-fej { display:flex; align-items:center; justify-content:space-between; padding:0 10px; }
-  .torta-cim { text-align:center; line-height:1.3; }
+  /* Tiles: horizontal swipe */
+  .csempe-fulek { display:flex; gap:6px; margin:4px 0 8px; }
+  .csempe-fulek button { flex:1; font:inherit; font-size:.82rem; font-weight:600; padding:7px 4px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); cursor:pointer; }
+  .csempe-fulek button.akt { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .csempe-sav { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; align-items:flex-start; margin:0 -16px; padding:0 16px; scroll-padding:0 16px; }
+  .csempe-sav::-webkit-scrollbar { display:none; }
+  .csempe { flex:0 0 100%; scroll-snap-align:start; margin-bottom:0; min-width:0; }
+  .csempe-pottyok { display:flex; justify-content:center; gap:6px; margin:8px 0 14px; }
+  .csempe-pottyok i { width:7px; height:7px; border-radius:50%; background:var(--line); }
+  .csempe-pottyok i.akt { background:var(--muted); }
+  .csempe-fej { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .csempe-fej b { font-size:1rem; }
+  .csempe-fej span { font-size:.8rem; color:var(--muted); }
+
+  /* Refuel log */
+  .naplo-lista { max-height:460px; overflow-y:auto; margin:0 -6px; padding:0 6px; overscroll-behavior:contain; }
+  .naplo-ho { position:sticky; top:0; background:var(--card); font-size:.72rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 0 4px; display:flex; justify-content:space-between; }
+  .naplo-sor { border-top:1px solid var(--line); padding:7px 0; font-variant-numeric:tabular-nums; }
+  .naplo-sor .s1 { display:flex; align-items:baseline; gap:8px; }
+  .naplo-sor .dt { color:var(--muted); font-size:.82rem; min-width:76px; }
+  .naplo-sor .gg { font-weight:700; flex:1; }
+  .naplo-sor .ll { color:var(--sarga); font-weight:800; }
+  .naplo-sor .s2 { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.75rem; color:var(--muted); margin-top:2px; }
+  .naplo-sor .s2 a { color:var(--accent); text-decoration:none; }
+  .naplo-ures { color:var(--muted); font-size:.9rem; padding:12px 0; }
+
+  /* Forecast */
+  .elo-most { display:flex; justify-content:space-between; align-items:baseline; padding:8px 12px; border-radius:10px; background:var(--bg); margin-bottom:8px; }
+  .elo-most span { color:var(--muted); font-size:.85rem; }
+  .elo-most b { font-size:1.3rem; font-variant-numeric:tabular-nums; }
+  .elo-lista { list-style:none; margin:0; padding:0; }
+  .elo-lista li { display:grid; grid-template-columns:12px 64px 1fr auto; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .elo-lista li i { width:10px; height:10px; border-radius:50%; }
+  .elo-lista .szint { font-weight:700; }
+  .elo-lista .sav { height:6px; border-radius:3px; background:var(--bg); overflow:hidden; }
+  .elo-lista .sav u { display:block; height:100%; border-radius:3px; }
+  .elo-lista .mikor { text-align:right; line-height:1.2; }
+  .elo-lista .mikor b { display:block; font-size:1rem; }
+  .elo-lista .mikor small { color:var(--muted); font-size:.75rem; }
+  .elo-megj { font-size:.75rem; color:var(--muted); margin:10px 0 0; line-height:1.35; }
+
+  /* Monthly pie chart: fuel per aircraft, ▲▼ between months */
+  .ho-gombok { display:flex; flex-direction:column; gap:4px; }
+  .torta-ablak { overflow:hidden; }
+  .torta-lap.le { animation: lap-le .35s ease-out; }
+  .torta-lap.fel { animation: lap-fel .35s ease-out; }
+  @keyframes lap-le { from { transform:translateY(-30px); opacity:0; } to { transform:none; opacity:1; } }
+  @keyframes lap-fel { from { transform:translateY(30px); opacity:0; } to { transform:none; opacity:1; } }
+  .torta-kartya { padding:14px 12px 12px; }
+  .torta-fej { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .torta-cim { text-align:left; line-height:1.3; }
   .torta-cim b { display:block; font-size:1rem; }
   .torta-cim span { font-size:.8rem; color:var(--muted); }
-  .lapoz { width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:1.3rem; line-height:1; cursor:pointer; }
+  .lapoz { width:34px; height:30px; font-size:.85rem !important; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:1.3rem; line-height:1; cursor:pointer; }
   .lapoz:disabled { opacity:.3; }
   .torta-sav { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .torta-sav::-webkit-scrollbar { display:none; }
-  .torta-lap { flex:0 0 100%; scroll-snap-align:center; padding:0 12px; }
+  .torta-lap { padding:0; }
   .torta-lap svg { width:100%; height:auto; display:block; }
   .torta-lap .szelet { stroke:var(--card); stroke-width:1.5; stroke-linejoin:round; }
   .torta-lap .torta-3d { transform-origin:50% 45%; animation: torta-be .9s cubic-bezier(.2,.8,.2,1) both; }
@@ -195,7 +255,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.3.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.4.0</span></div>
 
   <section class="card tartaly-kartya" id="tartalyKartya">
     <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
@@ -288,23 +348,63 @@
         </div>
 
         <div class="info"><span>Last meter reading</span><b id="utolso">…</b></div>
-        <div class="info big"><span>Fuel pumped</span><b id="mennyiseg">–</b></div>
-        <div class="info utolso5"><span class="u5-cim">Last 5 refuels</span>
-          <ol id="utolso5" aria-label="Last 5 refuels"></ol>
+        <div class="info pumpa" id="pumpaKartya">
+          <span>Fuel pumped</span>
+          <svg class="gep" viewBox="0 -16 120 90" aria-hidden="true">
+            <defs>
+              <clipPath id="gepAlak"><path d="M60 4 C63.5 4 65 8 65 14 L65 27 L109 30 Q113 30.5 113 34 L113 37 Q113 39 110 39 L65 41 L64 57 L78 60 Q80 60.6 80 62.5 L80 64.5 Q80 66 78 66 L63 66 L60 70 L57 66 L42 66 Q40 66 40 64.5 L40 62.5 Q40 60.6 42 60 L56 57 L55 41 L10 39 Q7 39 7 37 L7 34 Q7 30.5 11 30 L55 27 L55 14 C55 8 56.5 4 60 4 Z"/></clipPath>
+              <filter id="gepFeny" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>
+            </defs>
+            <!-- fuel nozzle + drops -->
+            <g class="cso"><path d="M60 -16 V-9"/><path d="M56 -9 H64 L62 -5 H58 Z" class="fej"/></g>
+            <g class="cseppek"><circle cx="60" cy="-3" r="1.4"/><circle cx="60" cy="-3" r="1.4"/><circle cx="60" cy="-3" r="1.4"/></g>
+            <g class="gep-test">
+              <g clip-path="url(#gepAlak)">
+                <rect x="0" y="0" width="120" height="74" class="ures-test"/>
+                <rect id="gepUzemanyag" x="0" y="74" width="120" height="74" class="uzemanyag"/>
+              </g>
+              <path class="korvonal-feny" filter="url(#gepFeny)" d="M60 4 C63.5 4 65 8 65 14 L65 27 L109 30 Q113 30.5 113 34 L113 37 Q113 39 110 39 L65 41 L64 57 L78 60 Q80 60.6 80 62.5 L80 64.5 Q80 66 78 66 L63 66 L60 70 L57 66 L42 66 Q40 66 40 64.5 L40 62.5 Q40 60.6 42 60 L56 57 L55 41 L10 39 Q7 39 7 37 L7 34 Q7 30.5 11 30 L55 27 L55 14 C55 8 56.5 4 60 4 Z"/>
+              <path class="korvonal" d="M60 4 C63.5 4 65 8 65 14 L65 27 L109 30 Q113 30.5 113 34 L113 37 Q113 39 110 39 L65 41 L64 57 L78 60 Q80 60.6 80 62.5 L80 64.5 Q80 66 78 66 L63 66 L60 70 L57 66 L42 66 Q40 66 40 64.5 L40 62.5 Q40 60.6 42 60 L56 57 L55 41 L10 39 Q7 39 7 37 L7 34 Q7 30.5 11 30 L55 27 L55 14 C55 8 56.5 4 60 4 Z"/>
+              <line class="panel" x1="55.5" x2="64.5" y1="27" y2="27"/><line class="panel" x1="55.5" x2="64.5" y1="41" y2="41"/>
+              <ellipse class="proppeller" cx="60" cy="3" rx="9" ry="1.1"/>
+              <line class="szken" x1="4" x2="116" y1="37" y2="37"/>
+            </g>
+          </svg>
+          <b id="mennyiseg">–</b>
         </div>
       </div>
     </div>
   </form>
 
-  <section class="card torta-kartya" aria-label="Fuel by aircraft per month">
-    <div class="torta-fej">
-      <button type="button" class="lapoz" id="tortaElozo" aria-label="Previous month">‹</button>
-      <div class="torta-cim"><b id="tortaHo">–</b><span id="tortaOssz"></span></div>
-      <button type="button" class="lapoz" id="tortaKov" aria-label="Next month">›</button>
-    </div>
-    <div class="torta-sav" id="tortaSav"></div>
-    <div class="torta-pottyok" id="tortaPottyok"></div>
-  </section>
+  <!-- Three tiles, swipe sideways: monthly pie · refuel log · forecast -->
+  <nav class="csempe-fulek" id="csempeFulek">
+    <button type="button" data-i="0" class="akt">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button>
+  </nav>
+  <div class="csempe-sav" id="csempeSav">
+    <section class="card csempe torta-kartya" aria-label="Fuel by aircraft per month">
+      <div class="torta-fej">
+        <div class="torta-cim"><b id="tortaHo">–</b><span id="tortaOssz"></span></div>
+        <div class="ho-gombok">
+          <button type="button" class="lapoz" id="tortaKov" aria-label="Next month">▲</button>
+          <button type="button" class="lapoz" id="tortaElozo" aria-label="Previous month">▼</button>
+        </div>
+      </div>
+      <div class="torta-ablak"><div class="torta-lap" id="tortaLap"></div></div>
+    </section>
+
+    <section class="card csempe naplo-kartya" aria-label="Refuel log">
+      <div class="csempe-fej"><b>Refuel log</b><span id="naploDb"></span></div>
+      <div class="naplo-lista" id="naploLista"></div>
+    </section>
+
+    <section class="card csempe elo-kartya" aria-label="Fuel forecast">
+      <div class="csempe-fej"><b>Forecast</b><span id="eloRata"></span></div>
+      <div class="elo-most"><span>Now</span><b id="eloMost">–</b></div>
+      <ol class="elo-lista" id="eloLista"></ol>
+      <p class="elo-megj" id="eloMegj"></p>
+    </section>
+  </div>
+  <div class="csempe-pottyok" id="csempePottyok"><i class="akt"></i><i></i><i></i></div>
 
   <button type="button" class="card szall-csempe" id="szallCsempe">
     <span class="szall-ikon" aria-hidden="true">🚚</span>
@@ -374,7 +474,7 @@ const $ = id => document.getElementById(id);
 let napi = [];
 // DEMO: fills the 14-day chart with sample refuels (20–180 l). Set to false to show real data only.
 const DEMO_ADAT = true;
-const DEMO_LITER = [65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];
+const DEMO_LITER = [72, 0, 118, 95, 40, 150, 66, 0, 88, 130, 52, 101, 0, 77, 65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];  // 28 days, oldest first
 let utolso = 247345, keszlet = 2100, kapacitas = 5000, hobbsMap = {}, kep = null;
 
 const fmt = n => n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
@@ -437,15 +537,15 @@ function grafikon() {
   if (!napi.length || (DEMO_ADAT && !napi.demo)) {
     const valodi = napi; napi = [];
     const ma = new Date();
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 27; i >= 0; i--) {
       const d = new Date(ma.getTime() - i * 86400000);
       const k = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
       const v = valodi.find(n => n.d === k);
-      napi.push({ d: k, l: (v ? v.l : 0) + (DEMO_ADAT ? DEMO_LITER[13 - i] : 0) });
+      napi.push({ d: k, l: (v ? v.l : 0) + (DEMO_ADAT ? DEMO_LITER[27 - i] : 0) });
     }
     napi.demo = DEMO_ADAT;
   }
-  if (!g) { trend(); return; }   // the 14-day chart was replaced by the last-5 list; data still feeds the trend arrow
+  if (!g) { trend(); elorejelzes(); return; }   // the 14-day chart was replaced by the last-5 list; data still feeds the trend arrow
   const el = (tag, attr, szoveg) => { const e = document.createElementNS(NS, tag);
     for (const k in attr) e.setAttribute(k, attr[k]); if (szoveg !== undefined) e.textContent = szoveg; g.append(e); return e; };
   const X0 = 14, X1 = 140, Y0 = 32, Y1 = 3;                 // plot area
@@ -511,6 +611,7 @@ const DEMO_UTOLSOK = [
 // "Kiss Péter" -> "Kiss P." so the name fits the narrow column (full name in the tooltip)
 function rovidNev(n) { const r = String(n || '').trim().split(/\s+/); return r.length > 1 ? r[0] + ' ' + r[1][0] + '.' : r[0]; }
 function utolso5() {
+  if (!$('utolso5')) return;   // the last-5 box was replaced by the refuel log tile
   const lista = utolsok.length ? utolsok : (DEMO_ADAT ? DEMO_UTOLSOK : []);
   const ol = $('utolso5'); ol.innerHTML = '';
   if (!lista.length) { ol.innerHTML = '<li class="ures">No refuels yet</li>'; return; }
@@ -639,52 +740,125 @@ function tortaRajz(adat) {
   });
   return svg;
 }
-function torta() {
-  const sav = $('tortaSav'), hok = utolso12();
+let tortaIdx = 11;   // 11 = current month, 0 = 11 months ago
+function torta(irany) {
+  const hok = utolso12(), k = hok[tortaIdx];
   const forras = DEMO_ADAT ? osszevon(havi, demoHavi()) : havi;
-  const regiPoz = sav.children.length ? Math.round(sav.scrollLeft / sav.clientWidth) : hok.length - 1;
-  sav.innerHTML = ''; $('tortaPottyok').innerHTML = '';
-  hok.forEach(k => {
-    const m = forras[k] || {};
-    const rendezett = Object.entries(m).map(([g, l]) => ({ g, l })).filter(x => x.l > 0).sort((a, b) => b.l - a.l);
-    // top 7 keep their own colour, the rest is grouped as "Other" (grey) – the list below still shows each one
-    const fo = rendezett.slice(0, 7).map((x, i) => ({ ...x, szin: SZINEK[i] }));
-    const tobbi = rendezett.slice(7);
-    const szeletek = tobbi.length ? fo.concat([{ g: 'Other', l: tobbi.reduce((a, x) => a + x.l, 0), szin: '--s-egyeb' }]) : fo;
-    const lap = document.createElement('div'); lap.className = 'torta-lap';
-    lap.dataset.ho = k;
-    lap.dataset.ossz = rendezett.reduce((a, x) => a + x.l, 0);
-    const svg = tortaRajz(szeletek);
-    svg.setAttribute('aria-label', `Fuel by aircraft, ${hoNev(k)}`);
-    lap.append(svg);
-    if (rendezett.length) {
-      const ul = document.createElement('ul'); ul.className = 'torta-lista';
-      rendezett.forEach((x, i) => {
-        const li = document.createElement('li');
-        const osszL = rendezett.reduce((a, y) => a + y.l, 0);
-        li.innerHTML = `<i style="background:var(${i < 7 ? SZINEK[i] : '--s-egyeb'})"></i><span class="n"><span class="nn"></span><small>${(x.l / osszL * 100).toFixed(1)}%</small></span><span class="v">${fmt(Math.round(x.l))} l</span>`;
-        li.querySelector('.nn').textContent = x.g;
-        ul.append(li);
-      });
-      lap.append(ul);
+  const m = forras[k] || {};
+  const rendezett = Object.entries(m).map(([g, l]) => ({ g, l })).filter(x => x.l > 0).sort((a, b) => b.l - a.l);
+  // top 7 keep their own colour, the rest is grouped as "Other" (grey) – the list below still shows each one
+  const fo = rendezett.slice(0, 7).map((x, i) => ({ ...x, szin: SZINEK[i] }));
+  const tobbi = rendezett.slice(7);
+  const szeletek = tobbi.length ? fo.concat([{ g: 'Other', l: tobbi.reduce((a, x) => a + x.l, 0), szin: '--s-egyeb' }]) : fo;
+  const osszL = rendezett.reduce((a, y) => a + y.l, 0);
+  const lap = $('tortaLap'); lap.innerHTML = '';
+  const svg = tortaRajz(szeletek);
+  svg.setAttribute('aria-label', `Fuel by aircraft, ${hoNev(k)}`);
+  lap.append(svg);
+  if (rendezett.length) {
+    const ul = document.createElement('ul'); ul.className = 'torta-lista';
+    rendezett.forEach((x, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<i style="background:var(${i < 7 ? SZINEK[i] : '--s-egyeb'})"></i><span class="n"><span class="nn"></span><small>${(x.l / osszL * 100).toFixed(1)}%</small></span><span class="v">${fmt(Math.round(x.l))} l</span>`;
+      li.querySelector('.nn').textContent = x.g;
+      ul.append(li);
+    });
+    lap.append(ul);
+  }
+  lap.classList.remove('le', 'fel'); void lap.offsetWidth; if (irany) lap.classList.add(irany);
+  $('tortaHo').textContent = hoNev(k);
+  $('tortaOssz').textContent = `Total: ${fmt(Math.round(osszL))} l`;
+  $('tortaElozo').disabled = tortaIdx === 0;
+  $('tortaKov').disabled = tortaIdx === hok.length - 1;
+}
+$('tortaElozo').addEventListener('click', () => { if (tortaIdx > 0) { tortaIdx--; torta('le'); } });
+$('tortaKov').addEventListener('click', () => { if (tortaIdx < 11) { tortaIdx++; torta('fel'); } });
+
+// --- Tiles: swipe sideways, or tap the tabs ---
+function csempeAkt() {
+  const sav = $('csempeSav'), i = Math.round(sav.scrollLeft / Math.max(1, sav.children[0].offsetWidth + 12));
+  [...$('csempePottyok').children].forEach((p, j) => p.classList.toggle('akt', j === i));
+  [...$('csempeFulek').children].forEach((b, j) => b.classList.toggle('akt', j === i));
+}
+$('csempeSav').addEventListener('scroll', () => requestAnimationFrame(csempeAkt), { passive: true });
+$('csempeFulek').addEventListener('click', e => {
+  const i = e.target.dataset && e.target.dataset.i; if (i === undefined) return;
+  const sav = $('csempeSav'); sav.scrollTo({ left: +i * (sav.children[0].offsetWidth + 12), behavior: 'smooth' });
+});
+
+// --- Refuel log (last 2 years, every detail) ---
+let naplo = [];
+function demoNaplo() {
+  const gepek = ['HA-FBL', 'HA-SGK', 'HA-TUS', 'OM-DJS', 'HA-SEP', 'OK-TOG', 'D-EKLM (foreign)', 'HA-MJC'];
+  const nevek = ['Kiss Péter', 'Nagy Anna', 'Tóth Gábor', 'Szabó Éva', 'Fülöp Ádám'];
+  const ki = []; let z = 247345, ma = Date.now();
+  for (let i = 0; i < 60; i++) {
+    const t = new Date(ma - i * 2.3 * 86400000), l = 20 + ((i * 47) % 161);
+    const k = t.getFullYear() + '.' + String(t.getMonth() + 1).padStart(2, '0') + '.' + String(t.getDate()).padStart(2, '0');
+    ki.push({ d: k, t: String(8 + (i * 5) % 10).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0'), g: gepek[i % gepek.length],
+              n: nevek[(i * 3) % nevek.length], e: z - l, z, l, h: 1500 - i * 2.4, f: '' });
+    z -= l;
+  }
+  return ki;
+}
+function naploRajz() {
+  const lista = naplo.length ? naplo : (DEMO_ADAT ? demoNaplo() : []);
+  const box = $('naploLista'); box.innerHTML = '';
+  $('naploDb').textContent = lista.length ? `${lista.length} refuels · last 2 years` : '';
+  if (!lista.length) { box.innerHTML = '<div class="naplo-ures">No refuels recorded yet.</div>'; return; }
+  let ho = '', hoOssz = {};
+  lista.forEach(x => { const k = x.d.slice(0, 7); hoOssz[k] = (hoOssz[k] || 0) + x.l; });
+  lista.forEach(x => {
+    const k = x.d.slice(0, 7);
+    if (k !== ho) {
+      ho = k;
+      const h = document.createElement('div'); h.className = 'naplo-ho';
+      h.innerHTML = `<span>${hoNev(k)}</span><span>${fmt(Math.round(hoOssz[k]))} l</span>`;
+      box.append(h);
     }
-    sav.append(lap);
-    $('tortaPottyok').append(document.createElement('i'));
+    const sor = document.createElement('div'); sor.className = 'naplo-sor';
+    const s1 = document.createElement('div'); s1.className = 's1';
+    const add = (szulo, cls, txt, tag = 'span') => { const e = document.createElement(tag); e.className = cls; e.textContent = txt; szulo.append(e); return e; };
+    add(s1, 'dt', x.d.slice(8, 10) + '/' + x.d.slice(5, 7) + (x.t ? ' ' + x.t : ''));
+    add(s1, 'gg', x.g);
+    add(s1, 'll', fmt(x.l) + ' l');
+    const s2 = document.createElement('div'); s2.className = 's2';
+    add(s2, '', '👤 ' + x.n);
+    if (x.h !== null && x.h !== undefined) add(s2, '', 'Hobbs ' + fmt(x.h));
+    if (x.z) add(s2, '', 'Meter ' + (x.e ? fmt(x.e) + ' → ' : '') + fmt(x.z));
+    if (x.f) { const a = add(s2, '', '📷 photo', 'a'); a.href = x.f; a.target = '_blank'; a.rel = 'noopener'; }
+    sor.append(s1, s2); box.append(sor);
   });
-  requestAnimationFrame(() => { sav.scrollLeft = regiPoz * sav.clientWidth; tortaFej(); });
 }
-function tortaFej() {
-  const sav = $('tortaSav'), i = Math.round(sav.scrollLeft / Math.max(1, sav.clientWidth));
-  const lap = sav.children[i]; if (!lap) return;
-  $('tortaHo').textContent = hoNev(lap.dataset.ho);
-  $('tortaOssz').textContent = `Total: ${fmt(Math.round(+lap.dataset.ossz))} l`;
-  [...$('tortaPottyok').children].forEach((p, j) => p.classList.toggle('akt', j === i));
-  $('tortaElozo').disabled = i === 0;
-  $('tortaKov').disabled = i === sav.children.length - 1;
+
+// --- Forecast: when will the tank reach 1500 / 1000 / 500 / 0 l, from the last 28 days' consumption ---
+function elorejelzes() {
+  if (!$('eloLista')) return;
+  const nap = napi.slice(-28), rata = nap.length ? nap.reduce((a, n) => a + n.l, 0) / nap.length : 0;
+  $('eloMost').textContent = fmt(Math.round(keszlet)) + ' l';
+  $('eloRata').textContent = rata > 0 ? `avg ${fmt(Math.round(rata))} l/day` : '';
+  const ol = $('eloLista'); ol.innerHTML = '';
+  const szin = t => t >= 1000 ? '--narancs' : '--piros';   // 1500/1000: getting low · 500/0: critical
+  [1500, 1000, 500, 0].forEach(T => {
+    const li = document.createElement('li');
+    let fo, al, arany;
+    if (keszlet <= T) { fo = 'reached'; al = 'already below'; arany = 1; }
+    else if (rata <= 0) { fo = '–'; al = 'no recent use'; arany = 0; }
+    else {
+      const napok = (keszlet - T) / rata, d = new Date(Date.now() + napok * 86400000);
+      fo = napok < 1 ? '< 1 day' : `${Math.round(napok)} days`;
+      al = '≈ ' + d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      arany = Math.max(.04, 1 - Math.min(1, napok / 60));   // bar: fuller = sooner (60-day horizon)
+    }
+    li.innerHTML = `<i style="background:var(${szin(T)})"></i><span class="szint">${fmt(T)} l</span>
+      <span class="sav"><u style="width:${Math.round(arany * 100)}%;background:var(${szin(T)})"></u></span>
+      <span class="mikor"><b>${fo}</b><small>${al}</small></span>`;
+    ol.append(li);
+  });
+  $('eloMegj').textContent = rata > 0
+    ? `Estimate based on the average daily consumption of the last ${nap.length} days. Deliveries are not included – it updates after every refuel.`
+    : 'Not enough recent refuels to make a forecast.';
 }
-$('tortaSav').addEventListener('scroll', () => requestAnimationFrame(tortaFej), { passive: true });
-$('tortaElozo').addEventListener('click', () => $('tortaSav').scrollBy({ left: -$('tortaSav').clientWidth, behavior: 'smooth' }));
-$('tortaKov').addEventListener('click', () => $('tortaSav').scrollBy({ left: $('tortaSav').clientWidth, behavior: 'smooth' }));
 
 // --- Tank: inner area y=8..162 (154 units) ---
 function tartaly(liter) {
@@ -715,10 +889,17 @@ function tartaly(liter) {
 
 function szamol() {
   const z = szam($('zaro').value);
-  if (isNaN(z)) { $('mennyiseg').textContent = '–'; return; }
+  if (isNaN(z)) { $('mennyiseg').textContent = '–'; pumpaKep(0); return; }
   const m = Math.round((z - utolso) * 100) / 100;
-  if (m <= 0) { $('mennyiseg').textContent = 'invalid (not above last)'; return; }
+  if (m <= 0) { $('mennyiseg').textContent = 'invalid (not above last)'; pumpaKep(0); return; }
   $('mennyiseg').textContent = fmt(m) + ' l' + (m > keszlet ? ' ⚠' : '');
+  pumpaKep(m);
+}
+// fill the aircraft pictogram: full at 200 l
+function pumpaKep(m) {
+  const arany = Math.max(0, Math.min(1, (m || 0) / 200));
+  $('gepUzemanyag').setAttribute('y', 70 - 66 * arany);
+  $('pumpaKartya').classList.toggle('tolt', m > 0);
 }
 
 // Registration actually recorded: for a foreign aircraft the typed one + " (foreign)"
@@ -945,7 +1126,7 @@ $('szMent').addEventListener('click', async () => {
     $('szoLiter').textContent = fmt(d.liter) + ' l';
     $('szoAtvevo').textContent = d.atvevo;
     $('szoKeszlet').textContent = fmt(d.keszlet) + ' l' + (d.tul ? ' ⚠' : '');
-    keszlet = d.keszlet; kapacitas = d.kapacitas || kapacitas; tartaly(keszlet);
+    keszlet = d.keszlet; kapacitas = d.kapacitas || kapacitas; tartaly(keszlet); elorejelzes();
     szLepes(3);
   } catch (e) { szUz('Error: ' + e.message); }
   finally { $('szMent').disabled = false; $('szUjKep').disabled = false; }
@@ -972,6 +1153,8 @@ async function betolt() {
     utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
     if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
     if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
+    if (Array.isArray(d.naplo)) { naplo = d.naplo; naploRajz(); }
+    elorejelzes();
     if (d.havi) { havi = d.havi; torta(); }
     $('utolso').textContent = fmt(utolso);
     tartaly(keszlet);
@@ -1022,6 +1205,10 @@ $('urlap').addEventListener('submit', async ev => {
     keszlet = d.keszlet; tartaly(keszlet);
     hobbsMap[lajstrom] = hobbs;
     if (napi.length) { napi[napi.length - 1].l += d.mennyiseg; grafikon(); }
+    { const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
+      naplo.unshift({ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: lajstrom, n: nev,
+                      e: zaro - d.mennyiseg, z: zaro, l: d.mennyiseg, h: hobbs, f: '' });
+      naploRajz(); elorejelzes(); }
     { const m = new Date(); utolsok.unshift({ d: String(m.getDate()).padStart(2, '0') + '/' + String(m.getMonth() + 1).padStart(2, '0'), g: lajstrom, l: d.mennyiseg, n: nev }); utolso5(); }
     { const k = hoKulcs(new Date()), g = valasztott === 'IDEGEN' ? 'FOREIGN' : valasztott;
       havi[k] = havi[k] || {}; havi[k][g] = (havi[k][g] || 0) + d.mennyiseg; torta(); }
@@ -1043,6 +1230,8 @@ tartaly(keszlet);
 grafikon();
 utolso5();
 torta();
+naploRajz();
+elorejelzes();
 uresJeloles();
 betolt();
 </script>

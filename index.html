@@ -148,6 +148,9 @@
   .csempe-fulek button.akt { background:var(--accent); border-color:var(--accent); color:#fff; }
   .csempe-sav { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; align-items:flex-start; margin:0 -16px; padding:0 16px; scroll-padding:0 16px; }
   .csempe-sav::-webkit-scrollbar { display:none; }
+  .csempe-sav[hidden], .csempe-pottyok[hidden] { display:none; }
+  .csempe-sav:not([hidden]) { animation: csempe-be .25s ease-out; }
+  @keyframes csempe-be { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
   .csempe { flex:0 0 100%; scroll-snap-align:start; margin-bottom:0; min-width:0; }
   .csempe-pottyok { display:flex; justify-content:center; gap:6px; margin:8px 0 14px; }
   .csempe-pottyok i { width:7px; height:7px; border-radius:50%; background:var(--line); }
@@ -288,7 +291,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.3</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.4</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -406,9 +409,9 @@
 
   <!-- Three tiles, swipe sideways: monthly pie · refuel log · forecast -->
   <nav class="csempe-fulek" id="csempeFulek">
-    <button type="button" data-i="0" class="akt">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button>
+    <button type="button" data-i="0">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button>
   </nav>
-  <div class="csempe-sav" id="csempeSav">
+  <div class="csempe-sav" id="csempeSav" hidden>
     <section class="card csempe torta-kartya" aria-label="Fuel by aircraft per month">
       <div class="torta-fej">
         <div class="torta-cim"><b id="tortaHo">–</b><span id="tortaOssz"></span></div>
@@ -432,7 +435,7 @@
       <p class="elo-megj" id="eloMegj"></p>
     </section>
   </div>
-  <div class="csempe-pottyok" id="csempePottyok"><i class="akt"></i><i></i><i></i></div>
+  <div class="csempe-pottyok" id="csempePottyok" hidden><i class="akt"></i><i></i><i></i></div>
 
 </main>
 
@@ -813,14 +816,26 @@ $('tortaKov').addEventListener('click', () => { if (tortaIdx < 11) { tortaIdx++;
 
 // --- Tiles: swipe sideways, or tap the tabs ---
 function csempeAkt() {
+  if ($('csempeSav').hidden) return;
   const sav = $('csempeSav'), i = Math.round(sav.scrollLeft / Math.max(1, sav.children[0].offsetWidth + 12));
   [...$('csempePottyok').children].forEach((p, j) => p.classList.toggle('akt', j === i));
   [...$('csempeFulek').children].forEach((b, j) => b.classList.toggle('akt', j === i));
 }
 $('csempeSav').addEventListener('scroll', () => requestAnimationFrame(csempeAkt), { passive: true });
+// tiles are hidden until a tab is tapped; tapping the active tab again hides them
 $('csempeFulek').addEventListener('click', e => {
   const i = e.target.dataset && e.target.dataset.i; if (i === undefined) return;
-  const sav = $('csempeSav'); sav.scrollTo({ left: +i * (sav.children[0].offsetWidth + 12), behavior: 'smooth' });
+  const sav = $('csempeSav'), gomb = e.target;
+  if (!sav.hidden && gomb.classList.contains('akt')) {
+    sav.hidden = true; $('csempePottyok').hidden = true;
+    gomb.classList.remove('akt');
+    return;
+  }
+  const voltRejtve = sav.hidden;
+  sav.hidden = false; $('csempePottyok').hidden = false;
+  [...$('csempeFulek').children].forEach(b => b.classList.toggle('akt', b === gomb));
+  sav.scrollTo({ left: +i * (sav.children[0].offsetWidth + 12), behavior: voltRejtve ? 'auto' : 'smooth' });
+  if (voltRejtve) { csempeAkt(); sav.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 });
 
 // --- Refuel log (last 2 years, every detail) ---

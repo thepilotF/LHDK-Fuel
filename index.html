@@ -36,12 +36,15 @@
   .dk-ho { font-size:.85rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
   .dk-het { font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
   .dk-ora { grid-column:1 / span 2; margin-top:6px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.8rem;
-            letter-spacing:.12em; color:#2aa7d6; display:flex; align-items:center; gap:6px; }
-  .dk-ora::before { content:''; width:6px; height:6px; border-radius:50%; background:#5fd4ff; box-shadow:0 0 6px #5fd4ff; animation: dk-pulzus 2s ease-in-out infinite; }
-  .dk-ora::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, color-mix(in srgb, #5fd4ff 60%, transparent), transparent); }
+            letter-spacing:.12em; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .dk-ora::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--muted); box-shadow:0 0 5px color-mix(in srgb, var(--muted) 70%, transparent); animation: dk-pulzus 2s ease-in-out infinite; }
+  .dk-ora::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, color-mix(in srgb, var(--muted) 55%, transparent), transparent); }
   @keyframes dk-pulzus { 0%,100% { opacity:1; } 50% { opacity:.3; } }
   @media (prefers-reduced-motion: reduce) { .dk-ora::before { animation:none; } }
   .oszlop + .oszlop .info:first-of-type { margin-top:12px; }
+  .oszlop + .oszlop { display:flex; flex-direction:column; }
+  .oszlop + .oszlop .info.pumpa { flex:1; }
+  .oszlop + .oszlop .info:not(.pumpa) b { font-size:1.35rem; }
 
   /* Summary before saving */
   .osz-lista { display:grid; grid-template-columns:auto 1fr; gap:10px 16px; margin:6px 0 4px; font-size:1rem; }
@@ -53,7 +56,7 @@
   .osz-figy:empty { display:none; }
 
   /* Fuel pumped: big green number, shown after a refuel is saved */
-  .ket-oszlop .info.pumpa { min-height:150px; justify-content:center; gap:4px; padding:12px; }
+  .ket-oszlop .info.pumpa { min-height:120px; justify-content:center; gap:4px; padding:12px; }
   .pumpa b#mennyiseg { font-size:2.6rem; line-height:1; color:var(--muted); font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
   .pumpa.kesz b#mennyiseg { color:var(--zold); animation: pumpa-be .6s cubic-bezier(.2,.8,.2,1); }
   .pumpa.kesz { animation: pumpa-feny 1.4s ease-out; }
@@ -265,7 +268,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.1</span></div>
 
   <section class="card tartaly-kartya" id="tartalyKartya">
     <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
@@ -336,7 +339,7 @@
         <div class="megj" id="hobbsMegj"></div>
 
         <label for="zaro">Closing meter reading</label>
-        <input id="zaro" class="kotelezo" type="text" inputmode="decimal" placeholder="247400" autocomplete="off">
+        <input id="zaro" class="kotelezo" type="text" inputmode="decimal" autocomplete="off">
 
         <label for="nev">Name</label>
         <input id="nev" class="kotelezo" type="text" autocomplete="name">

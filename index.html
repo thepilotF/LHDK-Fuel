@@ -6,15 +6,18 @@
 <title>LHDK Avgas Refueling</title>
 <style>
   :root { --bg:#f4f5f7; --card:#fff; --text:#1d2125; --muted:#6b7280; --accent:#0b6bcb; --ok:#127a3e; --err:#d92d20; --line:#d6d9de;
-          --tartaly-ures:#eef0f2; --tartaly-keret:#9aa1a9; --zold:#22a55b; --narancs:#f08c00; --piros:#e03131; }
+          --tartaly-ures:#eef0f2; --tartaly-keret:#9aa1a9; --zold:#22a55b; --narancs:#f08c00; --piros:#e03131;
+          --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s-egyeb:#a3a29c; --sarga:#c98a00; }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#121417; --card:#1c1f23; --text:#e8eaed; --muted:#9aa0a6; --accent:#4c9cf0; --ok:#4ccf7f; --err:#ff6b5f; --line:#33373d;
-            --tartaly-ures:#25292e; --tartaly-keret:#5c636b; }
+            --tartaly-ures:#25292e; --tartaly-keret:#5c636b;
+            --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s-egyeb:#6f6e69; --sarga:#f5c518; }
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
   main { max-width:560px; margin:0 auto; padding:20px 16px 170px; }
   h1 { font-size:1.4rem; margin:0 0 4px; }
+  .copyright .verzio { opacity:.55; margin-left:6px; font-variant-numeric:tabular-nums; }
   .copyright { font-size:.75rem; color:var(--muted); letter-spacing:.02em; margin:0 0 16px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
   label { display:block; font-weight:600; margin:14px 0 6px; font-size:.95rem; }
@@ -104,6 +107,42 @@
   .alacsony .hullam { animation-duration: 1.6s; }
   @media (prefers-reduced-motion: reduce) { .hullam { animation:none; } #folyadek { transition:none; } }
 
+  /* Monthly pie chart: fuel per aircraft, swipe between months */
+  .torta-kartya { padding:14px 0 10px; }
+  .torta-fej { display:flex; align-items:center; justify-content:space-between; padding:0 10px; }
+  .torta-cim { text-align:center; line-height:1.3; }
+  .torta-cim b { display:block; font-size:1rem; }
+  .torta-cim span { font-size:.8rem; color:var(--muted); }
+  .lapoz { width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--text); font-size:1.3rem; line-height:1; cursor:pointer; }
+  .lapoz:disabled { opacity:.3; }
+  .torta-sav { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .torta-sav::-webkit-scrollbar { display:none; }
+  .torta-lap { flex:0 0 100%; scroll-snap-align:center; padding:0 12px; }
+  .torta-lap svg { width:100%; height:auto; display:block; }
+  .torta-lap .szelet { stroke:var(--card); stroke-width:1.5; stroke-linejoin:round; }
+  .torta-lap .torta-3d { transform-origin:50% 45%; animation: torta-be .9s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes torta-be { from { opacity:0; transform:scale(.6) rotate(-8deg); } to { opacity:1; transform:none; } }
+  .torta-lap .perem { fill:none; stroke:#5fd4ff; stroke-width:.8; opacity:.9; }
+  .torta-lap .perem-feny { fill:none; stroke:#5fd4ff; stroke-width:3; opacity:.55; animation: perem 3s ease-in-out infinite; }
+  @keyframes perem { 0%,100% { opacity:.25; } 50% { opacity:.7; } }
+  .torta-lap .vezeto-pont { fill:#5fd4ff; }
+  @media (prefers-reduced-motion: reduce) { .torta-lap .torta-3d, .torta-lap .perem-feny { animation:none; } }
+  .torta-lap .vezeto { stroke:var(--muted); stroke-width:.8; fill:none; opacity:.7; }
+  .torta-lap .cimke { font-size:11.5px; fill:var(--text); }
+  .torta-lap .cimke tspan.l { font-weight:700; font-variant-numeric:tabular-nums; fill:var(--sarga); }
+  .torta-lap .szazalek { font-size:9px; fill:var(--muted); opacity:.75; font-variant-numeric:tabular-nums; }
+  .torta-lap .ures { font-size:12px; fill:var(--muted); }
+  .torta-lista { list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:3px 14px; font-size:.8rem; }
+  .torta-lista li { display:flex; align-items:center; gap:6px; min-width:0; }
+  .torta-lista i { flex:none; width:10px; height:10px; border-radius:3px; }
+  .torta-lista .n { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.15; }
+  .torta-lista .n small { display:block; font-size:.68rem; color:var(--muted); opacity:.75; font-variant-numeric:tabular-nums; }
+  .torta-lista .v { font-variant-numeric:tabular-nums; font-weight:700; color:var(--sarga); }
+  .torta-lista { gap:6px 14px; }
+  .torta-pottyok { display:flex; justify-content:center; gap:5px; margin-top:8px; }
+  .torta-pottyok i { width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .torta-pottyok i.akt { background:var(--muted); }
+
   /* Big SAVE button fixed at the bottom of the screen */
   .mentes-sav { position:fixed; left:0; right:0; bottom:0; z-index:10; background:color-mix(in srgb, var(--bg) 92%, transparent);
                 backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px calc(12px + env(safe-area-inset-bottom)); }
@@ -119,7 +158,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop</div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.1.1</span></div>
 
   <section class="card tartaly-kartya" id="tartalyKartya">
     <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
@@ -219,6 +258,16 @@
       </div>
     </div>
   </form>
+
+  <section class="card torta-kartya" aria-label="Fuel by aircraft per month">
+    <div class="torta-fej">
+      <button type="button" class="lapoz" id="tortaElozo" aria-label="Previous month">‹</button>
+      <div class="torta-cim"><b id="tortaHo">–</b><span id="tortaOssz"></span></div>
+      <button type="button" class="lapoz" id="tortaKov" aria-label="Next month">›</button>
+    </div>
+    <div class="torta-sav" id="tortaSav"></div>
+    <div class="torta-pottyok" id="tortaPottyok"></div>
+  </section>
 </main>
 
 <div class="mentes-sav">
@@ -367,6 +416,168 @@ function grafMutat(i) {
 }
 $('graf').addEventListener('pointermove', e => { const i = e.target.dataset && e.target.dataset.i; if (i !== undefined) grafMutat(+i); });
 $('graf').addEventListener('pointerleave', () => grafMutat(null));
+
+// --- Monthly pie: fuel per aircraft. Swipe (or ‹ ›) between the last 12 months ---
+let havi = {};
+const HONAPOK = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SZINEK = ['--s1','--s2','--s3','--s4','--s5','--s6','--s7'];  // fixed order; the rest folds into "Other"
+function hoKulcs(d) { return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0'); }
+function hoNev(k) { return HONAPOK[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4); }
+function utolso12() {
+  const ma = new Date(), ki = [];
+  for (let i = 11; i >= 0; i--) ki.push(hoKulcs(new Date(ma.getFullYear(), ma.getMonth() - i, 1)));
+  return ki;
+}
+// demo data for the pie (only while DEMO_ADAT is on)
+function demoHavi() {
+  const gepek = ['HA-FBL', 'HA-SGK', 'HA-TUS', 'OM-DJS', 'HA-SEP', 'HA-BEG', 'OK-TOG', 'FOREIGN', 'HA-MJC'];
+  const ki = {};
+  utolso12().forEach((k, hi) => {
+    ki[k] = {};
+    gepek.forEach((g, gi) => {
+      const v = ((hi * 37 + gi * 53) % 11) * 28 + (gi < 4 ? 120 : 20);   // deterministic 20–400 l
+      if ((hi + gi) % 5 !== 0) ki[k][g] = v;
+    });
+  });
+  return ki;
+}
+function osszevon(a, b) {
+  const ki = {};
+  [a, b].forEach(o => Object.entries(o || {}).forEach(([k, m]) => {
+    ki[k] = ki[k] || {};
+    Object.entries(m).forEach(([g, l]) => ki[k][g] = Math.round(((ki[k][g] || 0) + l) * 10) / 10);
+  }));
+  return ki;
+}
+// 3D pie: tilted top surface + extruded front wall, soft light, glowing rim
+let tortaId = 0;
+function tortaRajz(adat) {
+  const W = 390, H = 232, CX = W / 2, CY = 104, RX = 92, RY = 52, MELY = 18;   // ellipse radii + depth
+  const NS = 'http://www.w3.org/2000/svg', id = 'tt' + (++tortaId);
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img');
+  const el = (tag, attr, szoveg, szulo = svg) => { const e = document.createElementNS(NS, tag);
+    for (const k in attr) e.setAttribute(k, attr[k]); if (szoveg !== undefined) e.textContent = szoveg; szulo.append(e); return e; };
+  const ossz = adat.reduce((a, x) => a + x.l, 0);
+  if (!ossz) { el('text', { class: 'ures', x: CX, y: CY + 10, 'text-anchor': 'middle' }, 'No refuels this month'); return svg; }
+
+  const defs = el('defs', {});
+  defs.innerHTML = `
+    <radialGradient id="${id}f" cx="35%" cy="25%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".55" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></radialGradient>
+    <linearGradient id="${id}o" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset=".45" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>
+    <filter id="${id}g" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <radialGradient id="${id}a"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>`;
+  // floor shadow
+  el('ellipse', { cx: CX, cy: CY + MELY + 12, rx: RX * 1.08, ry: RY * .6, fill: `url(#${id}a)` });
+
+  const pt = (a, dy = 0) => [CX + RX * Math.cos(a), CY + RY * Math.sin(a) + dy];
+  const TAU = Math.PI * 2;
+  let szog = -Math.PI / 2;
+  const sz = adat.map(x => { const da = x.l / ossz * TAU, r = { ...x, a0: szog, a1: szog + da }; szog += da; return r; });
+
+  const g = el('g', { class: 'torta-3d' });
+  // front walls: only the part of each slice between 0 and π (facing the viewer)
+  const falak = [];
+  sz.forEach(x => {
+    for (let k = -1; k <= 1; k++) {
+      const s0 = Math.max(x.a0, k * TAU), s1 = Math.min(x.a1, k * TAU + Math.PI);
+      if (s1 > s0) falak.push({ x, s0, s1 });
+    }
+  });
+  falak.sort((a, b) => Math.abs(Math.cos((b.s0 + b.s1) / 2)) - Math.abs(Math.cos((a.s0 + a.s1) / 2)));  // sides first, centre last
+  falak.forEach(f => {
+    const [x0, y0] = pt(f.s0), [x1, y1] = pt(f.s1), [x2, y2] = pt(f.s1, MELY), [x3, y3] = pt(f.s0, MELY);
+    const d = `M${x0},${y0} A${RX},${RY} 0 0 1 ${x1},${y1} L${x2},${y2} A${RX},${RY} 0 0 0 ${x3},${y3} Z`;
+    el('path', { d, fill: `var(${f.x.szin})` }, undefined, g);
+    el('path', { d, fill: `url(#${id}o)` }, undefined, g);
+  });
+  // top surface
+  sz.forEach(x => {
+    const da = x.a1 - x.a0;
+    if (sz.length === 1) { el('ellipse', { class: 'szelet', cx: CX, cy: CY, rx: RX, ry: RY, fill: `var(${x.szin})` }, undefined, g); return; }
+    const [x0, y0] = pt(x.a0), [x1, y1] = pt(x.a1);
+    el('path', { class: 'szelet', fill: `var(${x.szin})`,
+      d: `M${CX},${CY} L${x0},${y0} A${RX},${RY} 0 ${da > Math.PI ? 1 : 0} 1 ${x1},${y1} Z` }, undefined, g);
+  });
+  el('ellipse', { cx: CX, cy: CY, rx: RX, ry: RY, fill: `url(#${id}f)`, 'pointer-events': 'none' }, undefined, g);
+  // glowing rim (high-tech accent)
+  el('ellipse', { class: 'perem-feny', cx: CX, cy: CY, rx: RX + 3, ry: RY + 2, filter: `url(#${id}g)` }, undefined, g);
+  el('ellipse', { class: 'perem', cx: CX, cy: CY, rx: RX + 3, ry: RY + 2 }, undefined, g);
+
+  // outside labels with leader lines; nudged apart on each side
+  const cimkek = sz.filter(x => x.l / ossz >= 0.03).map(x => {
+    const am = (x.a0 + x.a1) / 2, jobb = Math.cos(am) >= 0, elol = Math.sin(am) > 0;
+    return { x, am, jobb, y: CY + (RY + 18) * Math.sin(am) + (elol ? MELY : 0) };
+  });
+  [true, false].forEach(oldal => {
+    const cs = cimkek.filter(h => h.jobb === oldal).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < cs.length; i++) if (cs[i].y - cs[i - 1].y < 23) cs[i].y = cs[i - 1].y + 23;
+    const tul = cs.length ? cs[cs.length - 1].y - (H - 16) : 0;
+    if (tul > 0) cs.forEach(h => h.y -= tul);
+    if (cs.length && cs[0].y < 8) { const le = 8 - cs[0].y; cs.forEach(h => h.y += le); }
+  });
+  cimkek.forEach(h => {
+    const [ex, ey] = pt(h.am, Math.sin(h.am) > 0 ? MELY * .5 : 0);
+    const kx = CX + (RX + 10) * Math.cos(h.am);
+    const szel = (h.x.g.length + fmt(Math.round(h.x.l)).length + 3) * 6.6 + 4;   // estimated label width
+    let vx = h.jobb ? Math.max(kx, CX + RX * .6) + 12 : Math.min(kx, CX - RX * .6) - 12;
+    vx = h.jobb ? Math.min(vx, W - 4 - szel) : Math.max(vx, 4 + szel);            // keep the label inside the card
+    el('polyline', { class: 'vezeto', points: `${ex},${ey} ${kx},${h.y} ${vx},${h.y}` });
+    el('circle', { class: 'vezeto-pont', cx: ex, cy: ey, r: 1.6 });
+    const t = el('text', { class: 'cimke', x: vx + (h.jobb ? 3 : -3), y: h.y + 3.5, 'text-anchor': h.jobb ? 'start' : 'end' });
+    el('tspan', {}, h.x.g + ' ', t);
+    el('tspan', { class: 'l' }, fmt(Math.round(h.x.l)) + ' l', t);
+    el('text', { class: 'szazalek', x: vx + (h.jobb ? 3 : -3), y: h.y + 14, 'text-anchor': h.jobb ? 'start' : 'end' },
+       (h.x.l / ossz * 100).toFixed(1) + '%');
+  });
+  return svg;
+}
+function torta() {
+  const sav = $('tortaSav'), hok = utolso12();
+  const forras = DEMO_ADAT ? osszevon(havi, demoHavi()) : havi;
+  const regiPoz = sav.children.length ? Math.round(sav.scrollLeft / sav.clientWidth) : hok.length - 1;
+  sav.innerHTML = ''; $('tortaPottyok').innerHTML = '';
+  hok.forEach(k => {
+    const m = forras[k] || {};
+    const rendezett = Object.entries(m).map(([g, l]) => ({ g, l })).filter(x => x.l > 0).sort((a, b) => b.l - a.l);
+    // top 7 keep their own colour, the rest is grouped as "Other" (grey) – the list below still shows each one
+    const fo = rendezett.slice(0, 7).map((x, i) => ({ ...x, szin: SZINEK[i] }));
+    const tobbi = rendezett.slice(7);
+    const szeletek = tobbi.length ? fo.concat([{ g: 'Other', l: tobbi.reduce((a, x) => a + x.l, 0), szin: '--s-egyeb' }]) : fo;
+    const lap = document.createElement('div'); lap.className = 'torta-lap';
+    lap.dataset.ho = k;
+    lap.dataset.ossz = rendezett.reduce((a, x) => a + x.l, 0);
+    const svg = tortaRajz(szeletek);
+    svg.setAttribute('aria-label', `Fuel by aircraft, ${hoNev(k)}`);
+    lap.append(svg);
+    if (rendezett.length) {
+      const ul = document.createElement('ul'); ul.className = 'torta-lista';
+      rendezett.forEach((x, i) => {
+        const li = document.createElement('li');
+        const osszL = rendezett.reduce((a, y) => a + y.l, 0);
+        li.innerHTML = `<i style="background:var(${i < 7 ? SZINEK[i] : '--s-egyeb'})"></i><span class="n"><span class="nn"></span><small>${(x.l / osszL * 100).toFixed(1)}%</small></span><span class="v">${fmt(Math.round(x.l))} l</span>`;
+        li.querySelector('.nn').textContent = x.g;
+        ul.append(li);
+      });
+      lap.append(ul);
+    }
+    sav.append(lap);
+    $('tortaPottyok').append(document.createElement('i'));
+  });
+  requestAnimationFrame(() => { sav.scrollLeft = regiPoz * sav.clientWidth; tortaFej(); });
+}
+function tortaFej() {
+  const sav = $('tortaSav'), i = Math.round(sav.scrollLeft / Math.max(1, sav.clientWidth));
+  const lap = sav.children[i]; if (!lap) return;
+  $('tortaHo').textContent = hoNev(lap.dataset.ho);
+  $('tortaOssz').textContent = `Total: ${fmt(Math.round(+lap.dataset.ossz))} l`;
+  [...$('tortaPottyok').children].forEach((p, j) => p.classList.toggle('akt', j === i));
+  $('tortaElozo').disabled = i === 0;
+  $('tortaKov').disabled = i === sav.children.length - 1;
+}
+$('tortaSav').addEventListener('scroll', () => requestAnimationFrame(tortaFej), { passive: true });
+$('tortaElozo').addEventListener('click', () => $('tortaSav').scrollBy({ left: -$('tortaSav').clientWidth, behavior: 'smooth' }));
+$('tortaKov').addEventListener('click', () => $('tortaSav').scrollBy({ left: $('tortaSav').clientWidth, behavior: 'smooth' }));
 
 // --- Tank: inner area y=8..162 (154 units) ---
 function tartaly(liter) {
@@ -595,6 +806,7 @@ async function betolt() {
     idegenValt(false);
     utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
     if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
+    if (d.havi) { havi = d.havi; torta(); }
     $('utolso').textContent = fmt(utolso);
     tartaly(keszlet);
     hobbsInfo();
@@ -644,6 +856,8 @@ $('urlap').addEventListener('submit', async ev => {
     keszlet = d.keszlet; tartaly(keszlet);
     hobbsMap[lajstrom] = hobbs;
     if (napi.length) { napi[napi.length - 1].l += d.mennyiseg; grafikon(); }
+    { const k = hoKulcs(new Date()), g = valasztott === 'IDEGEN' ? 'FOREIGN' : valasztott;
+      havi[k] = havi[k] || {}; havi[k][g] = (havi[k][g] || 0) + d.mennyiseg; torta(); }
     $('zaro').value = ''; $('zaro').classList.remove('olvasott');
     $('hobbs').value = ''; $('lajstrom').value = ''; idegenValt(false);
     fotoTorles(); szamol(); uresJeloles();
@@ -660,6 +874,7 @@ try { $('nev').value = localStorage.getItem('nev') || ''; } catch (e) {}
 $('utolso').textContent = fmt(utolso);
 tartaly(keszlet);
 grafikon();
+torta();
 uresJeloles();
 betolt();
 </script>

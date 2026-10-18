@@ -28,6 +28,30 @@
   .info { display:flex; justify-content:space-between; gap:8px; padding:10px 12px; margin-top:14px; border-radius:8px; background:var(--bg); font-size:1rem; }
   .info b { font-variant-numeric:tabular-nums; text-align:right; }
   .big b { font-size:1.3rem; color:var(--accent); }
+  /* Date card: borderless, high-tech */
+  .datum-kartya { display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:10px; align-items:center;
+                  padding:4px 2px 2px; }
+  .dk-nap { grid-row:1 / span 2; font-size:3rem; line-height:.9; font-weight:800; letter-spacing:-.04em; font-variant-numeric:tabular-nums;
+            background:linear-gradient(180deg, var(--text), color-mix(in srgb, #5fd4ff 70%, var(--text))); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .dk-ho { font-size:.85rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+  .dk-het { font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .dk-ora { grid-column:1 / span 2; margin-top:6px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.8rem;
+            letter-spacing:.12em; color:#2aa7d6; display:flex; align-items:center; gap:6px; }
+  .dk-ora::before { content:''; width:6px; height:6px; border-radius:50%; background:#5fd4ff; box-shadow:0 0 6px #5fd4ff; animation: dk-pulzus 2s ease-in-out infinite; }
+  .dk-ora::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, color-mix(in srgb, #5fd4ff 60%, transparent), transparent); }
+  @keyframes dk-pulzus { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+  @media (prefers-reduced-motion: reduce) { .dk-ora::before { animation:none; } }
+  .oszlop + .oszlop .info:first-of-type { margin-top:12px; }
+
+  /* Summary before saving */
+  .osz-lista { display:grid; grid-template-columns:auto 1fr; gap:10px 16px; margin:6px 0 4px; font-size:1rem; }
+  .osz-lista dt { color:var(--muted); }
+  .osz-lista dd { margin:0; text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+  .osz-lista .kiemel { color:var(--zold); font-size:1.5rem; line-height:1; }
+  .osz-lista hr { grid-column:1 / span 2; border:0; border-top:1px solid var(--line); margin:2px 0; width:100%; }
+  .osz-figy { margin:10px 0 0; padding:10px 12px; border-radius:10px; background:color-mix(in srgb, var(--narancs) 14%, transparent); color:var(--text); font-size:.85rem; line-height:1.35; }
+  .osz-figy:empty { display:none; }
+
   /* Fuel pumped: big green number, shown after a refuel is saved */
   .ket-oszlop .info.pumpa { min-height:150px; justify-content:center; gap:4px; padding:12px; }
   .pumpa b#mennyiseg { font-size:2.6rem; line-height:1; color:var(--muted); font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
@@ -232,7 +256,7 @@
   .mentes-belso { max-width:560px; margin:0 auto; }
   #uzenet { min-height:1.4em; font-weight:700; margin-bottom:8px; text-align:center; }
   #uzenet.enter { font-size:1.3rem; letter-spacing:.06em; }
-  #kuld { width:100%; height:68px; font-size:1.7rem; font-weight:800; letter-spacing:.12em; border:0; border-radius:12px;
+  #kuld { width:100%; height:68px; font-size:1.35rem; font-weight:800; letter-spacing:.1em; border:0; border-radius:12px;
           background:var(--accent); color:#fff; cursor:pointer; box-shadow:0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
   #kuld:active { transform:translateY(1px); }
   #kuld:disabled { opacity:.5; }
@@ -241,7 +265,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.4.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.0</span></div>
 
   <section class="card tartaly-kartya" id="tartalyKartya">
     <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
@@ -281,9 +305,6 @@
   <form class="card" id="urlap" autocomplete="off" novalidate>
     <div class="ket-oszlop">
       <div class="oszlop">
-        <label for="datum">Date</label>
-        <input id="datum" readonly>
-
         <label for="lajstrom">Aircraft Registration</label>
         <select id="lajstrom" class="kotelezo">
           <option value="">Select…</option>
@@ -314,23 +335,21 @@
         <input id="hobbs" class="kotelezo" type="text" inputmode="decimal" placeholder="e.g. 1234.5">
         <div class="megj" id="hobbsMegj"></div>
 
+        <label for="zaro">Closing meter reading</label>
+        <input id="zaro" class="kotelezo" type="text" inputmode="decimal" placeholder="247400" autocomplete="off">
+
         <label for="nev">Name</label>
         <input id="nev" class="kotelezo" type="text" autocomplete="name">
       </div>
 
       <div class="oszlop">
-        <label for="zaro">Closing meter reading</label>
-        <div class="sor">
-          <input id="zaro" class="kotelezo" type="text" inputmode="decimal" placeholder="247400">
-          <label class="foto-gomb" title="Photo of the meter" aria-label="Photo of the meter">
-            📷<input id="foto" type="file" accept="image/*" capture="environment">
-          </label>
-        </div>
-        <div class="megj" id="ocrMegj">Take a photo of the meter and the app will try to read it.</div>
-        <div class="chipek" id="ocrChipek"></div>
-        <div class="elonezet" id="elonezet">
-          <img id="elonezetKep" alt="Meter photo">
-          <button type="button" id="fotoTorol">Remove</button>
+        <div class="datum-kartya" aria-label="Date">
+          <div class="dk-nap" id="dkNap">--</div>
+          <div class="dk-jobb">
+            <div class="dk-ho" id="dkHo">---</div>
+            <div class="dk-het" id="dkHet">---</div>
+          </div>
+          <div class="dk-ora" id="dkOra">--:--</div>
         </div>
 
         <div class="info"><span>Last meter reading</span><b id="utolso">…</b></div>
@@ -380,6 +399,19 @@
   </button>
 </main>
 
+<!-- Summary before saving a refuel -->
+<div class="szall-hatter" id="oszAblak" hidden>
+  <div class="szall-panel" role="dialog" aria-modal="true" aria-labelledby="oszCim">
+    <div class="szall-fej"><b id="oszCim">Check before saving</b><button type="button" class="szall-x" id="oszBezar" aria-label="Back to edit">✕</button></div>
+    <dl class="osz-lista" id="oszLista"></dl>
+    <div class="osz-figy" id="oszFigy"></div>
+    <div class="szall-ket">
+      <button type="button" class="szall-gomb masodlagos" id="oszVissza">Edit</button>
+      <button type="button" class="szall-gomb" id="oszMent">SAVE</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fuel delivery: password → quantity + receiver + delivery-note photo → summary -->
 <div class="szall-hatter" id="szallAblak" hidden>
   <div class="szall-panel" role="dialog" aria-modal="true" aria-labelledby="szallCim">
@@ -424,7 +456,7 @@
 <div class="mentes-sav">
   <div class="mentes-belso">
     <div id="uzenet" role="status" aria-live="assertive"></div>
-    <button id="kuld" type="submit" form="urlap" disabled>SAVE</button>
+    <button id="kuld" type="submit" form="urlap" disabled>PROCEED TO SAVE</button>
   </div>
 </div>
 
@@ -769,7 +801,7 @@ function demoNaplo() {
   return ki;
 }
 function naploRajz() {
-  const lista = naplo.length ? naplo : (DEMO_ADAT ? demoNaplo() : []);
+  const lista = DEMO_ADAT ? naplo.concat(demoNaplo()) : naplo;
   const box = $('naploLista'); box.innerHTML = '';
   $('naploDb').textContent = lista.length ? `${lista.length} refuels · last 2 years` : '';
   if (!lista.length) { box.innerHTML = '<div class="naplo-ures">No refuels recorded yet.</div>'; return; }
@@ -889,11 +921,11 @@ function idegenValt(fokusz = true) {
   uresJeloles();
 }
 
-$('zaro').addEventListener('input', () => { $('zaro').classList.remove('olvasott'); szamol(); });
+
 $('lajstrom').addEventListener('change', idegenValt);
 $('idegen').addEventListener('input', () => { $('idegen').value = $('idegen').value.toUpperCase(); hobbsInfo(); });
 
-// --- Photo ---
+// --- Photo resize (used for the delivery note) ---
 function kepMeretez(file, max = 1600) {
   return new Promise((res, rej) => {
     const img = new Image();
@@ -909,136 +941,6 @@ function kepMeretez(file, max = 1600) {
     img.src = URL.createObjectURL(file);
   });
 }
-
-function fotoTorles() {
-  kep = null; $('foto').value = '';
-  $('elonezet').classList.remove('van');
-  $('ocrChipek').innerHTML = '';
-  $('ocrMegj').textContent = 'Take a photo of the meter and the app will try to read it.';
-  $('ocrMegj').className = 'megj';
-}
-$('fotoTorol').addEventListener('click', fotoTorles);
-
-// --- Reading the meter from the photo ---
-// 1) in the phone's browser with Tesseract (digits only, several image variants)
-// 2) in parallel on the server with Google Drive OCR (if the Drive API is enabled)
-// The best candidate goes into the field; every number found is offered as a tap-to-use chip.
-const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-let tessWorker = null;
-function scriptBetolt(src) {
-  return new Promise((res, rej) => {
-    if (window.Tesseract) return res();
-    const sc = document.createElement('script'); sc.src = src; sc.onload = res;
-    sc.onerror = () => rej(new Error('OCR engine could not be loaded')); document.head.append(sc);
-  });
-}
-async function tess() {
-  if (tessWorker) return tessWorker;
-  await scriptBetolt(TESSERACT_URL);
-  tessWorker = await Tesseract.createWorker('eng');
-  await tessWorker.setParameters({ tessedit_char_whitelist: '0123456789', tessedit_pageseg_mode: '11' });
-  return tessWorker;
-}
-// Image variants: grayscale with contrast stretch, and the same inverted (white digits on dark drums)
-function valtozatok(dataUrl) {
-  return new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      const s = Math.min(1, 1400 / Math.max(img.width, img.height));
-      const w = Math.round(img.width * s), h = Math.round(img.height * s);
-      const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
-      const d = x.getImageData(0, 0, w, h), p = d.data;
-      let mn = 255, mx = 0;
-      for (let i = 0; i < p.length; i += 4) { const g = .299 * p[i] + .587 * p[i + 1] + .114 * p[i + 2]; p[i] = g; mn = Math.min(mn, g); mx = Math.max(mx, g); }
-      const k = 255 / Math.max(1, mx - mn);
-      for (let i = 0; i < p.length; i += 4) { const g = (p[i] - mn) * k; p[i] = p[i + 1] = p[i + 2] = g; }
-      x.putImageData(d, 0, 0); const norm = c.toDataURL('image/png');
-      for (let i = 0; i < p.length; i += 4) { p[i] = p[i + 1] = p[i + 2] = 255 - p[i]; }
-      x.putImageData(d, 0, 0); const inv = c.toDataURL('image/png');
-      res([norm, inv]);
-    };
-    img.src = dataUrl;
-  });
-}
-// All plausible meter numbers (4–8 digits) in a piece of OCR text
-function szamokSzovegbol(szoveg) {
-  const ki = new Set();
-  String(szoveg || '').split(/\n/).forEach(sor => {
-    const egyben = sor.replace(/\D/g, '');
-    if (egyben.length >= 4 && egyben.length <= 8) ki.add(egyben);
-    (sor.match(/\d+/g) || []).forEach(t => { if (t.length >= 4 && t.length <= 8) ki.add(t); });
-  });
-  return [...ki];
-}
-// Best candidate: just above the last reading (also tries the last digit as a decimal drum)
-function legjobb(jeloltek) {
-  const ertekek = [];
-  jeloltek.forEach(t => { ertekek.push(Number(t)); ertekek.push(Number(t) / 10); });
-  const jo = ertekek.filter(n => n > utolso && n - utolso <= 5000).sort((a, b) => a - b);
-  return jo.length ? Math.round(jo[0] * 10) / 10 : null;
-}
-function olvasottBeir(v) {
-  $('zaro').value = String(v);
-  $('zaro').classList.add('olvasott');
-  szamol(); uresJeloles();
-}
-function chipek(jeloltek, javaslat) {
-  const box = $('ocrChipek'); box.innerHTML = '';
-  jeloltek.slice(0, 6).forEach(t => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t;
-    b.onclick = () => { olvasottBeir(Number(t)); $('ocrMegj').textContent = `Using ${t} – check it against the photo!`; $('ocrMegj').className = 'megj'; };
-    box.append(b);
-  });
-}
-
-$('foto').addEventListener('change', async () => {
-  const file = $('foto').files[0];
-  if (!file) return;
-  try {
-    kep = await kepMeretez(file);
-  } catch (e) { $('ocrMegj').textContent = e.message; $('ocrMegj').className = 'megj err'; return; }
-  $('elonezetKep').src = kep;
-  $('elonezet').classList.add('van');
-  $('ocrChipek').innerHTML = '';
-  $('ocrMegj').textContent = '🔍 Reading the meter…'; $('ocrMegj').className = 'megj';
-
-  const hibak = [];
-  const helyi = (async () => {
-    try {
-      const w = await tess(), ki = [];
-      for (const v of await valtozatok(kep)) ki.push(...szamokSzovegbol((await w.recognize(v)).data.text));
-      return ki;
-    } catch (e) { hibak.push('phone: ' + e.message); return []; }
-  })();
-  const szerver = (async () => {
-    try {
-      const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                                       body: JSON.stringify({ action: 'ocr', kep }) });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.hiba);
-      return szamokSzovegbol(d.szoveg).concat(d.javaslat ? [String(d.javaslat)] : []);
-    } catch (e) { hibak.push('server: ' + e.message); return []; }
-  })();
-
-  const jeloltek = [...new Set([...(await helyi), ...(await szerver)])];
-  const javaslat = legjobb(jeloltek);
-  // order chips: the suggestion first, then the ones closest to the last reading
-  jeloltek.sort((a, b) => Math.abs(a - utolso) - Math.abs(b - utolso));
-  chipek(jeloltek, javaslat);
-  if (javaslat !== null) {
-    olvasottBeir(javaslat);
-    $('ocrMegj').textContent = `Read: ${fmt(javaslat)} – check it against the photo and correct if needed!`;
-    $('ocrMegj').className = 'megj';
-  } else if (jeloltek.length) {
-    $('ocrMegj').textContent = 'Numbers found – tap the correct one, or type it in:';
-    $('ocrMegj').className = 'megj err';
-  } else {
-    $('ocrMegj').textContent = 'Could not read the meter' + (hibak.length ? ' (' + hibak.join('; ') + ')' : '') +
-      '. Please type it in – the photo will still be saved. Tip: fill the frame with the digits, avoid glare.';
-    $('ocrMegj').className = 'megj err';
-  }
-});
 
 // --- Fuel delivery (password protected) ---
 let szJelszo = '', szKep = null;
@@ -1134,7 +1036,9 @@ async function betolt() {
 }
 
 // --- Save ---
-$('urlap').addEventListener('submit', async ev => {
+// --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
+let fuggo = null;
+$('urlap').addEventListener('submit', ev => {
   ev.preventDefault();
   uresJeloles();
   if (kotelezoMezok().some(el => !el.value.trim())) return enterData();
@@ -1148,25 +1052,53 @@ $('urlap').addEventListener('submit', async ev => {
   if (isNaN(hobbs) || hobbs < 0) return uzenet('Invalid Hobbs value.', 'err');
   if (isNaN(zaro)) return uzenet('Invalid meter reading.', 'err');
   if (zaro <= utolso) return uzenet('Closing meter reading must be greater than the last one.', 'err');
+  uzenet('');
 
+  const m = Math.round((zaro - utolso) * 100) / 100;
+  const figy = [];
   const elozoHobbs = hobbsMap[lajstrom];
-  if (elozoHobbs !== undefined && hobbs < elozoHobbs &&
-      !confirm(`Hobbs (${fmt(hobbs)}) is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}). Are you sure?`)) return;
-  const m = zaro - utolso;
-  if (m > keszlet && !confirm(`Fuel pumped (${fmt(m)} l) is more than the current quantity (${fmt(keszlet)} l). Is the meter reading correct?`)) return;
+  if (elozoHobbs !== undefined && hobbs < elozoHobbs) figy.push(`Hobbs is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}).`);
+  if (m > keszlet) figy.push(`Fuel pumped is more than the current tank quantity (${fmt(keszlet)} l).`);
 
-  $('kuld').disabled = true; uzenet(kep ? 'Saving (uploading photo)…' : 'Saving…');
+  fuggo = { valasztott, idegen, lajstrom, zaro, hobbs, nev, m };
+  const most = new Date();
+  const sorok = [
+    ['Date', most.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0')],
+    ['Aircraft', lajstrom], ['Hobbs', fmt(hobbs)], ['Name', nev], null,
+    ['Last meter reading', fmt(utolso)], ['Closing meter reading', fmt(zaro)], null,
+    ['Fuel pumped', fmt(m) + ' l', 'kiemel'], ['Tank after refuel', fmt(Math.max(0, Math.round(keszlet - m))) + ' l']];
+  const dl = $('oszLista'); dl.innerHTML = '';
+  sorok.forEach(x => {
+    if (!x) { dl.append(document.createElement('hr')); return; }
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = x[0]; dd.textContent = x[1]; if (x[2]) dd.className = x[2];
+    dl.append(dt, dd);
+  });
+  $('oszFigy').textContent = figy.length ? '⚠ ' + figy.join(' ') : '';
+  $('oszAblak').hidden = false;
+});
+function oszZar() { $('oszAblak').hidden = true; }
+$('oszBezar').addEventListener('click', oszZar);
+$('oszVissza').addEventListener('click', oszZar);
+$('oszAblak').addEventListener('click', e => { if (e.target === $('oszAblak')) oszZar(); });
+
+$('oszMent').addEventListener('click', async () => {
+  if (!fuggo) return;
+  const { valasztott, idegen, lajstrom, zaro, hobbs, nev } = fuggo;
+  $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
+  $('kuld').disabled = true; uzenet('Saving…');
   try {
     const r = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids a CORS preflight
-      body: JSON.stringify({ lajstrom: valasztott, idegen, zaro, hobbs, nev, kep })
+      body: JSON.stringify({ lajstrom: valasztott, idegen, zaro, hobbs, nev })
     });
     const d = await r.json();
     if (!d.ok) throw new Error(d.hiba || 'Unknown error');
+    oszZar(); fuggo = null;
     try { localStorage.setItem('nev', nev); } catch (e) {}
     pumpaMutat(d.mennyiseg, lajstrom);
-    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${lajstrom})${d.foto ? ', with photo' : ''}` +
+    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${lajstrom})` +
            (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
     utolso = d.utolso; $('utolso').textContent = fmt(utolso);
     keszlet = d.keszlet; tartaly(keszlet);
@@ -1176,21 +1108,32 @@ $('urlap').addEventListener('submit', async ev => {
       naplo.unshift({ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: lajstrom, n: nev,
                       e: zaro - d.mennyiseg, z: zaro, l: d.mennyiseg, h: hobbs, f: '' });
       naploRajz(); elorejelzes(); }
-    { const m = new Date(); utolsok.unshift({ d: String(m.getDate()).padStart(2, '0') + '/' + String(m.getMonth() + 1).padStart(2, '0'), g: lajstrom, l: d.mennyiseg, n: nev }); utolso5(); }
     { const k = hoKulcs(new Date()), g = valasztott === 'IDEGEN' ? 'FOREIGN' : valasztott;
       havi[k] = havi[k] || {}; havi[k][g] = (havi[k][g] || 0) + d.mennyiseg; torta(); }
-    $('zaro').value = ''; $('zaro').classList.remove('olvasott');
+    $('zaro').value = '';
     $('hobbs').value = ''; $('lajstrom').value = ''; idegenValt(false);
-    fotoTorles(); szamol(); uresJeloles();
+    uresJeloles();
   } catch (e) {
+    $('oszFigy').textContent = 'Error: ' + e.message;
     uzenet('Error: ' + e.message, 'err');
   } finally {
+    $('oszMent').disabled = false; $('oszMent').textContent = 'SAVE';
     $('kuld').disabled = false;
   }
 });
 
 // --- Start ---
-$('datum').value = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'2-digit', day:'2-digit' });
+function datumKartya() {
+  const d = new Date();
+  $('dkNap').textContent = String(d.getDate()).padStart(2, '0');
+  $('dkHo').textContent = d.toLocaleDateString('en-GB', { month: 'short' }) + ' ' + d.getFullYear();
+  $('dkHet').textContent = d.toLocaleDateString('en-GB', { weekday: 'long' });
+  $('dkOra').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' LT';
+}
+datumKartya(); setInterval(datumKartya, 15000);
+// the closing meter reading always starts empty (also when the browser restores the page)
+$('zaro').value = '';
+window.addEventListener('pageshow', () => { $('zaro').value = ''; uresJeloles(); });
 try { $('nev').value = localStorage.getItem('nev') || ''; } catch (e) {}
 $('utolso').textContent = fmt(utolso);
 tartaly(keszlet);

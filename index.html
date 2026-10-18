@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LHDK Avgas Refueling</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --text:#1d2125; --muted:#6b7280; --accent:#0b6bcb; --ok:#127a3e; --err:#d92d20; --line:#d6d9de;
+          --tartaly-ures:#eef0f2; --tartaly-keret:#9aa1a9; --zold:#22a55b; --narancs:#f08c00; --piros:#e03131; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121417; --card:#1c1f23; --text:#e8eaed; --muted:#9aa0a6; --accent:#4c9cf0; --ok:#4ccf7f; --err:#ff6b5f; --line:#33373d;
+            --tartaly-ures:#25292e; --tartaly-keret:#5c636b; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:20px 16px 170px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .copyright { font-size:.75rem; color:var(--muted); letter-spacing:.02em; margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
+  label { display:block; font-weight:600; margin:14px 0 6px; font-size:.95rem; }
+  label:first-child { margin-top:0; }
+  input, select { width:100%; font-size:1.1rem; padding:12px; border:1.5px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
+  input[readonly] { color:var(--muted); }
+  input.olvasott { border-color:var(--narancs); box-shadow:0 0 0 2px color-mix(in srgb, var(--narancs) 30%, transparent); }
+  .info { display:flex; justify-content:space-between; gap:8px; padding:10px 12px; margin-top:14px; border-radius:8px; background:var(--bg); font-size:1rem; }
+  .info b { font-variant-numeric:tabular-nums; text-align:right; }
+  .big b { font-size:1.3rem; color:var(--accent); }
+  .megj { font-size:.85rem; color:var(--muted); margin-top:6px; min-height:1.1em; }
+  .ok { color:var(--ok); } .err { color:var(--err); }
+
+  /* Required fields: blinking red frame while empty */
+  .ures { border-color:var(--err); animation: villog 1.2s ease-in-out infinite; }
+  @keyframes villog {
+    0%, 100% { border-color:var(--err); box-shadow:0 0 0 3px color-mix(in srgb, var(--err) 35%, transparent); }
+    50%      { border-color:var(--line); box-shadow:0 0 0 0 transparent; }
+  }
+  .ures.razas { animation: villog .35s ease-in-out 4, raz .4s ease-in-out; }
+  @keyframes raz { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
+  @media (prefers-reduced-motion: reduce) { .ures, .ures.razas { animation:none; box-shadow:0 0 0 3px color-mix(in srgb, var(--err) 35%, transparent); } }
+
+  /* Two-column form, divided in the middle */
+  .ket-oszlop { display:grid; grid-template-columns:1fr 1fr; }
+  .oszlop { min-width:0; }
+  #idegenMezo label { margin-top:14px; }
+  .oszlop:first-child { padding-right:14px; }
+  .oszlop + .oszlop { padding-left:14px; border-left:1px solid var(--line); }
+  .ket-oszlop input, .ket-oszlop select { font-size:1rem; padding:10px; }
+  .ket-oszlop .info { flex-direction:column; gap:2px; }
+  .ket-oszlop .info span { font-size:.85rem; color:var(--muted); }
+  .ket-oszlop .info b { text-align:left; }
+
+  /* Photo */
+  .sor { display:flex; gap:6px; }
+  .sor input { flex:1; min-width:0; }
+  .foto-gomb { margin:0; flex:none; display:flex; align-items:center; justify-content:center; width:44px; border:1.5px solid var(--line);
+               border-radius:8px; background:var(--bg); font-size:1.2rem; cursor:pointer; }
+  .foto-gomb input { display:none; }
+  .chipek { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { font:inherit; font-size:.85rem; font-variant-numeric:tabular-nums; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:var(--bg); color:var(--text); cursor:pointer; }
+  .elonezet { display:none; align-items:center; gap:10px; margin-top:8px; }
+  .elonezet.van { display:flex; }
+  .elonezet img { width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+  .elonezet button { padding:6px 10px; font-size:.85rem; font-weight:600; background:transparent; color:var(--err); border:1px solid var(--line); border-radius:8px; }
+
+  /* Tank */
+  .tartaly-kartya { display:flex; align-items:center; gap:16px; }
+  .tartaly-kartya svg { width:84px; flex:none; }
+  .tartaly-adat { flex:1; min-width:0; }
+  .jobb-sav { margin-left:auto; align-self:stretch; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:8px; }
+  .klub-logo { flex:none; width:96px; max-height:90px; object-fit:contain; }
+  .trend { width:96px; text-align:right; --trend-szin:var(--narancs); }
+  .trend[data-irany="up"]   { --trend-szin:var(--piros); }
+  .trend[data-irany="down"] { --trend-szin:var(--zold); }
+  .trend svg { width:75px; height:75px; display:block; margin-left:auto; overflow:visible; }
+  .trend .nyil line, .trend .nyil polyline { fill:none; stroke:var(--trend-szin); stroke-width:2.4; transition:stroke .8s; stroke-linecap:round; stroke-linejoin:round; }
+  .trend .nyil-forg { transform-origin:20px 20px; transition:transform .8s cubic-bezier(.4,0,.2,1); }
+  .trend[data-irany="up"]   .nyil-forg { transform:rotate(-40deg); }
+  .trend[data-irany="down"] .nyil-forg { transform:rotate(40deg); }
+  .trend .nyil { animation: nyil 1.6s ease-in-out infinite; }
+  @keyframes nyil { 0%,100% { transform:translateX(-2.5px); } 50% { transform:translateX(3.5px); } }
+  @media (prefers-reduced-motion: reduce) { .trend .nyil { animation:none; } }
+  .trend-szo { font-size:.85rem; font-weight:700; margin-top:0; color:var(--trend-szin); transition:color .8s; }
+  .trend-cim { font-size:.62rem; line-height:1.25; color:var(--muted); margin-top:2px; }
+  @media (max-width:400px) { .klub-logo { width:72px; } }
+  .tartaly-adat h2 { font-size:1rem; margin:0 0 4px; color:var(--muted); font-weight:600; }
+  .tartaly-adat .liter { font-size:2rem; font-weight:800; font-variant-numeric:tabular-nums; transition:color 1s; }
+  .tartaly-adat .kap { color:var(--muted); }
+  .tartaly-adat .allapot { margin-top:6px; font-weight:600; }
+  #skala line { stroke:var(--tartaly-keret); stroke-width:1; }
+  #skala text { paint-order:stroke; stroke:var(--tartaly-ures); stroke-width:2px; stroke-linejoin:round; fill:var(--muted); font-size:7.5px; font-weight:300; dominant-baseline:middle; font-variant-numeric:tabular-nums; }
+  .ket-oszlop .grafikon { padding:8px 10px; }
+  .ket-oszlop .grafikon span { white-space:nowrap; font-size:.72rem; }
+  .grafikon svg { width:100%; height:auto; display:block; margin-top:2px; overflow:visible; }
+  #graf .oszl { fill:none; stroke:var(--zold); stroke-width:.6; }
+  #graf .oszl.akt { stroke-width:1.1; }
+  #graf .tengely { stroke:var(--muted); stroke-width:.4; opacity:.5; }
+  #graf .jel { stroke:var(--muted); stroke-width:.35; opacity:.45; }
+  #graf .racs { stroke:var(--line); stroke-width:.3; stroke-dasharray:1.5 1.5; }
+  #graf text { fill:var(--muted); font-size:4.7px; font-weight:300; opacity:.85; font-variant-numeric:tabular-nums; }
+  #folyadek { transition: transform 1.4s cubic-bezier(.4,0,.2,1); }
+  .hullam { animation: hullam 2.4s linear infinite; transition: fill 1s; }
+  .hullam.hatso { animation-duration: 3.6s; opacity:.45; }
+  @keyframes hullam { from { transform: translateX(0); } to { transform: translateX(-70px); } }
+  .alacsony .hullam { animation-duration: 1.6s; }
+  @media (prefers-reduced-motion: reduce) { .hullam { animation:none; } #folyadek { transition:none; } }
+
+  /* Big SAVE button fixed at the bottom of the screen */
+  .mentes-sav { position:fixed; left:0; right:0; bottom:0; z-index:10; background:color-mix(in srgb, var(--bg) 92%, transparent);
+                backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .mentes-belso { max-width:560px; margin:0 auto; }
+  #uzenet { min-height:1.4em; font-weight:700; margin-bottom:8px; text-align:center; }
+  #uzenet.enter { font-size:1.3rem; letter-spacing:.06em; }
+  #kuld { width:100%; height:68px; font-size:1.7rem; font-weight:800; letter-spacing:.12em; border:0; border-radius:12px;
+          background:var(--accent); color:#fff; cursor:pointer; box-shadow:0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+  #kuld:active { transform:translateY(1px); }
+  #kuld:disabled { opacity:.5; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LHDK Avgas Refueling</h1>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop</div>
+
+  <section class="card tartaly-kartya" id="tartalyKartya">
+    <svg viewBox="0 0 100 170" role="img" aria-label="Tank level">
+      <defs>
+        <clipPath id="tartalyClip"><rect x="10" y="8" width="80" height="154" rx="16"/></clipPath>
+      </defs>
+      <g clip-path="url(#tartalyClip)">
+        <rect width="100" height="170" fill="var(--tartaly-ures)"/>
+        <g id="folyadek" style="transform: translateY(162px)">
+          <path class="hullam hatso" d="M0 0 Q17.5 -4 35 0 T70 0 T105 0 T140 0 T175 0 T210 0 V200 H0 Z" fill="var(--piros)"/>
+          <path class="hullam" d="M0 1.5 Q17.5 5 35 1.5 T70 1.5 T105 1.5 T140 1.5 T175 1.5 T210 1.5 V200 H0 Z" fill="var(--piros)"/>
+        </g>
+      </g>
+      <!-- litre scale (drawn by skala()) -->
+      <g id="skala"></g>
+      <rect x="10" y="8" width="80" height="154" rx="16" fill="none" stroke="var(--tartaly-keret)" stroke-width="2.5"/>
+    </svg>
+    <div class="tartaly-adat">
+      <h2>Current Quantity</h2>
+      <div class="liter" id="keszletSzoveg">2,100 l</div>
+      <div class="kap" id="kapSzoveg">/ 5,000 l (42%)</div>
+      <div class="allapot" id="allapot"></div>
+    </div>
+    <div class="jobb-sav">
+      <div class="trend" id="trend" data-irany="flat">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><g class="nyil-forg"><g class="nyil">
+          <line x1="8" y1="20" x2="30" y2="20"/><polyline points="23,13 30,20 23,27"/>
+        </g></g></svg>
+        <div class="trend-szo" id="trendSzo">Stable</div>
+        <div class="trend-cim">Fuel consumption trend in the last 5 days</div>
+      </div>
+      <!-- Club logo: upload it as logo.png next to index.html in the GitHub repo -->
+      <img class="klub-logo" src="logo.png" alt="Malév Repülőklub" onerror="this.remove()">
+    </div>
+  </section>
+
+  <form class="card" id="urlap" autocomplete="off" novalidate>
+    <div class="ket-oszlop">
+      <div class="oszlop">
+        <label for="datum">Date</label>
+        <input id="datum" readonly>
+
+        <label for="lajstrom">Aircraft Registration</label>
+        <select id="lajstrom" class="kotelezo">
+          <option value="">Select…</option>
+          <option value="IDEGEN">FOREIGN</option>
+          <option>HA-BEG</option>
+          <option>HA-BFD</option>
+          <option>HA-FBG</option>
+          <option>HA-FBL</option>
+          <option>HA-MJC</option>
+          <option>HA-SAU</option>
+          <option>HA-SBL</option>
+          <option>HA-SEP</option>
+          <option>HA-SGK</option>
+          <option>HA-SGM</option>
+          <option>HA-SGY</option>
+          <option>HA-TUS</option>
+          <option>HA-VEU</option>
+          <option>OK-TOG</option>
+          <option>OM-DJS</option>
+          <option>OM-DLP</option>
+        </select>
+        <div id="idegenMezo" hidden>
+          <label for="idegen">Foreign aircraft registration</label>
+          <input id="idegen" type="text" placeholder="e.g. D-EABC" autocapitalize="characters" maxlength="12">
+        </div>
+
+        <label for="hobbs">Hobbs</label>
+        <input id="hobbs" class="kotelezo" type="text" inputmode="decimal" placeholder="e.g. 1234.5">
+        <div class="megj" id="hobbsMegj"></div>
+
+        <label for="nev">Name</label>
+        <input id="nev" class="kotelezo" type="text" autocomplete="name">
+      </div>
+
+      <div class="oszlop">
+        <label for="zaro">Closing meter reading</label>
+        <div class="sor">
+          <input id="zaro" class="kotelezo" type="text" inputmode="decimal" placeholder="247400">
+          <label class="foto-gomb" title="Photo of the meter" aria-label="Photo of the meter">
+            📷<input id="foto" type="file" accept="image/*" capture="environment">
+          </label>
+        </div>
+        <div class="megj" id="ocrMegj">Take a photo of the meter and the app will try to read it.</div>
+        <div class="chipek" id="ocrChipek"></div>
+        <div class="elonezet" id="elonezet">
+          <img id="elonezetKep" alt="Meter photo">
+          <button type="button" id="fotoTorol">Remove</button>
+        </div>
+
+        <div class="info"><span>Last meter reading</span><b id="utolso">…</b></div>
+        <div class="info big"><span>Fuel pumped</span><b id="mennyiseg">–</b></div>
+        <div class="info grafikon"><span id="grafCim">Last 14 days</span>
+          <svg id="graf" viewBox="0 0 140 40" role="img" aria-label="Fuel pumped per day, last 14 days"></svg>
+        </div>
+      </div>
+    </div>
+  </form>
+</main>
+
+<div class="mentes-sav">
+  <div class="mentes-belso">
+    <div id="uzenet" role="status" aria-live="assertive"></div>
+    <button id="kuld" type="submit" form="urlap" disabled>SAVE</button>
+  </div>
+</div>
+
+<script>
+// ▼▼▼ PASTE THE APPS SCRIPT WEB APP URL HERE ▼▼▼
+const API_URL = 'https://script.google.com/macros/s/AKfycbwBron0VA-VCqBwWJSAUv_mhgOCYr4L3hqbGcAcdRKB6q7HSfGhQ5x8L8bC0GT0CjRl5g/exec';
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+// Colour thresholds (litres)
+const ZOLD_HATAR = 1500;    // green from here up
+const NARANCS_HATAR = 500;  // orange up to 1500, red below
+
+const $ = id => document.getElementById(id);
+let napi = [];
+// DEMO: fills the 14-day chart with sample refuels (20–180 l). Set to false to show real data only.
+const DEMO_ADAT = true;
+const DEMO_LITER = [65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];
+let utolso = 247345, keszlet = 2100, kapacitas = 5000, hobbsMap = {}, kep = null;
+
+const fmt = n => n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+const szam = s => parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));
+
+function uzenet(szoveg, osztaly) { $('uzenet').textContent = szoveg; $('uzenet').className = osztaly || ''; }
+
+// --- Required fields: blink red while empty ---
+function kotelezoMezok() {
+  return [...document.querySelectorAll('.kotelezo')].concat($('idegenMezo').hidden ? [] : [$('idegen')]);
+}
+function uresJeloles() {
+  document.querySelectorAll('.ures').forEach(el => el.classList.remove('ures'));
+  kotelezoMezok().forEach(el => el.classList.toggle('ures', !el.value.trim()));
+}
+document.addEventListener('input', uresJeloles);
+document.addEventListener('change', uresJeloles);
+
+// --- "Enter data" voice + red text ---
+function enterData() {
+  uzenet('ENTER DATA', 'err enter');
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance('Enter data');
+    u.lang = 'en-US'; u.rate = 0.95;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+  const uresek = kotelezoMezok().filter(el => !el.value.trim());
+  uresek.forEach(el => { el.classList.remove('razas'); void el.offsetWidth; el.classList.add('razas'); });
+  setTimeout(() => uresek.forEach(el => el.classList.remove('razas')), 1500);
+  if (uresek[0]) { uresek[0].scrollIntoView({ behavior: 'smooth', block: 'center' }); uresek[0].focus({ preventScroll: true }); }
+}
+
+// --- Litre scale on the side of the tank: 500, 1000, 1500, 2000, 3000, 4000 ---
+function skala() {
+  const NS = 'http://www.w3.org/2000/svg', g = $('skala');
+  g.innerHTML = '';
+  [500, 1000, 1500, 2000, 3000, 4000].filter(l => l < kapacitas).forEach(l => {
+    const y = 162 - 154 * l / kapacitas;
+    const fo = l === ZOLD_HATAR || l === NARANCS_HATAR; // threshold marks are longer
+    const ln = document.createElementNS(NS, 'line');
+    ln.setAttribute('x1', 10); ln.setAttribute('x2', fo ? 20 : 16);
+    ln.setAttribute('y1', y); ln.setAttribute('y2', y);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', fo ? 23 : 19); t.setAttribute('y', y);
+    t.textContent = l.toLocaleString('en-GB');
+    g.append(ln, t);
+  });
+}
+
+// --- Last 14 days chart: x = day, y = litres pumped ---
+function nap(d) { return d.slice(8, 10) + '/' + d.slice(5, 7); }  // 'yyyy.MM.dd' -> 'dd/MM'
+function grafikon() {
+  const NS = 'http://www.w3.org/2000/svg', g = $('graf');
+  g.innerHTML = '';
+  if (!napi.length || (DEMO_ADAT && !napi.demo)) {
+    const valodi = napi; napi = [];
+    const ma = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(ma.getTime() - i * 86400000);
+      const k = d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+      const v = valodi.find(n => n.d === k);
+      napi.push({ d: k, l: (v ? v.l : 0) + (DEMO_ADAT ? DEMO_LITER[13 - i] : 0) });
+    }
+    napi.demo = DEMO_ADAT;
+  }
+  const el = (tag, attr, szoveg) => { const e = document.createElementNS(NS, tag);
+    for (const k in attr) e.setAttribute(k, attr[k]); if (szoveg !== undefined) e.textContent = szoveg; g.append(e); return e; };
+  const X0 = 14, X1 = 140, Y0 = 32, Y1 = 3;                 // plot area
+  const max = Math.max(...napi.map(n => n.l));
+  const fel = max > 0 ? Math.ceil(max / 50) * 50 : 100;     // y-axis top, rounded to 50 l
+  const y = l => Y0 - (Y0 - Y1) * l / fel;
+  const lep = (X1 - X0) / napi.length, sz = Math.max(2, lep - 3);
+  // y axis: thin faint line with ticks at 0, half and top
+  el('line', { class: 'tengely', x1: X0, x2: X0, y1: Y1, y2: Y0 });
+  [0, fel / 2, fel].forEach(v => {
+    el('line', { class: 'jel', x1: X0 - 1.5, x2: X0, y1: y(v), y2: y(v) });
+    if (v) el('line', { class: 'racs', x1: X0, x2: X1, y1: y(v), y2: y(v) });
+    el('text', { x: X0 - 2.5, y: y(v) + 1.6, 'text-anchor': 'end' }, fmt(v));
+  });
+  napi.forEach((n, i) => {
+    const x = X0 + i * lep + (lep - sz) / 2;
+    if (n.l > 0) {
+      const h = Math.max(1, Y0 - y(n.l)), rr = Math.min(1, sz / 2, h);
+      el('path', { class: 'oszl', 'data-i': i,
+        d: `M${x},${Y0} V${Y0 - h + rr} Q${x},${Y0 - h} ${x + rr},${Y0 - h} H${x + sz - rr} Q${x + sz},${Y0 - h} ${x + sz},${Y0 - h + rr} V${Y0}` });
+    }
+    // x axis: a small tick under every day
+    const cx = X0 + i * lep + lep / 2;
+    el('line', { class: 'jel', x1: cx, x2: cx, y1: Y0, y2: Y0 + 1.5 });
+    // invisible hit target over the whole column
+    el('rect', { x: X0 + i * lep, y: Y1, width: lep, height: Y0 - Y1 + 6, fill: 'transparent', 'data-i': i });
+  });
+  el('line', { class: 'tengely', x1: X0, x2: X1, y1: Y0, y2: Y0 });
+  const cx = i => X0 + i * lep + lep / 2;
+  el('text', { x: cx(0), y: Y0 + 6, 'text-anchor': 'middle' }, nap(napi[0].d));
+  el('text', { x: cx(7), y: Y0 + 6, 'text-anchor': 'middle' }, nap(napi[7].d));
+  el('text', { x: cx(napi.length - 1), y: Y0 + 6, 'text-anchor': 'end' }, 'today');
+  trend();
+  const ossz = napi.reduce((a, n) => a + n.l, 0);
+  $('grafCim').textContent = `Last 14 days: ${fmt(Math.round(ossz))} l`;
+}
+// --- Fuel consumption trend over the last 5 days (linear fit of daily litres) ---
+function trend() {
+  const u = napi.slice(-5).map(n => n.l), k = u.length;
+  if (k < 2) return;
+  const mx = (k - 1) / 2, my = u.reduce((a, b) => a + b, 0) / k;
+  let sxy = 0, sxx = 0;
+  u.forEach((v, i) => { sxy += (i - mx) * (v - my); sxx += (i - mx) ** 2; });
+  const valtozas = my > 0 ? (sxy / sxx) * (k - 1) / my : 0;   // relative change over the 5 days
+  const irany = valtozas > 0.15 ? 'up' : valtozas < -0.15 ? 'down' : 'flat';
+  const t = $('trend');
+  t.dataset.irany = irany;
+  $('trendSzo').textContent = { up: 'Rising', flat: 'Stable', down: 'Falling' }[irany];
+}
+
+function grafMutat(i) {
+  document.querySelectorAll('#graf .oszl').forEach(o => o.classList.toggle('akt', o.dataset.i == i));
+  if (i === null) { grafikon(); return; }
+  const n = napi[i];
+  $('grafCim').textContent = `${nap(n.d)}: ${fmt(n.l)} l`;
+}
+$('graf').addEventListener('pointermove', e => { const i = e.target.dataset && e.target.dataset.i; if (i !== undefined) grafMutat(+i); });
+$('graf').addEventListener('pointerleave', () => grafMutat(null));
+
+// --- Tank: inner area y=8..162 (154 units) ---
+function tartaly(liter) {
+  skala();
+  const arany = Math.max(0, Math.min(1, liter / kapacitas));
+  $('folyadek').style.transform = `translateY(${162 - 154 * arany}px)`;
+
+  let szin, szoveg;
+  if (liter >= ZOLD_HATAR)        { szin = 'var(--zold)';    szoveg = 'OK'; }
+  else if (liter >= NARANCS_HATAR){ szin = 'var(--narancs)'; szoveg = 'Getting low'; }
+  else                            { szin = 'var(--piros)';   szoveg = 'Low – order fuel!'; }
+
+  document.querySelectorAll('.hullam').forEach(p => p.style.fill = szin);
+  $('keszletSzoveg').style.color = szin;
+  $('allapot').textContent = szoveg;
+  $('allapot').style.color = szin;
+  $('tartalyKartya').classList.toggle('alacsony', liter < NARANCS_HATAR);
+  $('kapSzoveg').textContent = `/ ${fmt(kapacitas)} l (${Math.round(arany * 100)}%)`;
+
+  const kezd = parseFloat($('keszletSzoveg').dataset.v ?? liter), ido = 1200, t0 = performance.now();
+  (function lep(t) {
+    const p = Math.min(1, (t - t0) / ido), e = 1 - Math.pow(1 - p, 3);
+    $('keszletSzoveg').textContent = fmt(Math.round(kezd + (liter - kezd) * e)) + ' l';
+    if (p < 1) requestAnimationFrame(lep);
+  })(t0);
+  $('keszletSzoveg').dataset.v = liter;
+}
+
+function szamol() {
+  const z = szam($('zaro').value);
+  if (isNaN(z)) { $('mennyiseg').textContent = '–'; return; }
+  const m = Math.round((z - utolso) * 100) / 100;
+  if (m <= 0) { $('mennyiseg').textContent = 'invalid (not above last)'; return; }
+  $('mennyiseg').textContent = fmt(m) + ' l' + (m > keszlet ? ' ⚠' : '');
+}
+
+// Registration actually recorded: for a foreign aircraft the typed one + " (foreign)"
+function aktLajstrom() {
+  const l = $('lajstrom').value;
+  if (l !== 'IDEGEN') return l;
+  const k = $('idegen').value.trim().toUpperCase();
+  return k ? k + ' (foreign)' : '';
+}
+
+function hobbsInfo() {
+  const l = aktLajstrom(), h = hobbsMap[l];
+  $('hobbsMegj').textContent = l && h !== undefined ? `Last recorded Hobbs (${l}): ${fmt(h)}` : '';
+}
+
+function idegenValt(fokusz = true) {
+  const idegen = $('lajstrom').value === 'IDEGEN';
+  $('idegenMezo').hidden = !idegen;
+  if (idegen) { if (fokusz) $('idegen').focus(); } else $('idegen').value = '';
+  hobbsInfo();
+  uresJeloles();
+}
+
+$('zaro').addEventListener('input', () => { $('zaro').classList.remove('olvasott'); szamol(); });
+$('lajstrom').addEventListener('change', idegenValt);
+$('idegen').addEventListener('input', () => { $('idegen').value = $('idegen').value.toUpperCase(); hobbsInfo(); });
+
+// --- Photo ---
+function kepMeretez(file, max = 1600) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => rej(new Error('Could not open the image.'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function fotoTorles() {
+  kep = null; $('foto').value = '';
+  $('elonezet').classList.remove('van');
+  $('ocrChipek').innerHTML = '';
+  $('ocrMegj').textContent = 'Take a photo of the meter and the app will try to read it.';
+  $('ocrMegj').className = 'megj';
+}
+$('fotoTorol').addEventListener('click', fotoTorles);
+
+// --- Reading the meter from the photo ---
+// 1) in the phone's browser with Tesseract (digits only, several image variants)
+// 2) in parallel on the server with Google Drive OCR (if the Drive API is enabled)
+// The best candidate goes into the field; every number found is offered as a tap-to-use chip.
+const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let tessWorker = null;
+function scriptBetolt(src) {
+  return new Promise((res, rej) => {
+    if (window.Tesseract) return res();
+    const sc = document.createElement('script'); sc.src = src; sc.onload = res;
+    sc.onerror = () => rej(new Error('OCR engine could not be loaded')); document.head.append(sc);
+  });
+}
+async function tess() {
+  if (tessWorker) return tessWorker;
+  await scriptBetolt(TESSERACT_URL);
+  tessWorker = await Tesseract.createWorker('eng');
+  await tessWorker.setParameters({ tessedit_char_whitelist: '0123456789', tessedit_pageseg_mode: '11' });
+  return tessWorker;
+}
+// Image variants: grayscale with contrast stretch, and the same inverted (white digits on dark drums)
+function valtozatok(dataUrl) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 1400 / Math.max(img.width, img.height));
+      const w = Math.round(img.width * s), h = Math.round(img.height * s);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
+      const d = x.getImageData(0, 0, w, h), p = d.data;
+      let mn = 255, mx = 0;
+      for (let i = 0; i < p.length; i += 4) { const g = .299 * p[i] + .587 * p[i + 1] + .114 * p[i + 2]; p[i] = g; mn = Math.min(mn, g); mx = Math.max(mx, g); }
+      const k = 255 / Math.max(1, mx - mn);
+      for (let i = 0; i < p.length; i += 4) { const g = (p[i] - mn) * k; p[i] = p[i + 1] = p[i + 2] = g; }
+      x.putImageData(d, 0, 0); const norm = c.toDataURL('image/png');
+      for (let i = 0; i < p.length; i += 4) { p[i] = p[i + 1] = p[i + 2] = 255 - p[i]; }
+      x.putImageData(d, 0, 0); const inv = c.toDataURL('image/png');
+      res([norm, inv]);
+    };
+    img.src = dataUrl;
+  });
+}
+// All plausible meter numbers (4–8 digits) in a piece of OCR text
+function szamokSzovegbol(szoveg) {
+  const ki = new Set();
+  String(szoveg || '').split(/\n/).forEach(sor => {
+    const egyben = sor.replace(/\D/g, '');
+    if (egyben.length >= 4 && egyben.length <= 8) ki.add(egyben);
+    (sor.match(/\d+/g) || []).forEach(t => { if (t.length >= 4 && t.length <= 8) ki.add(t); });
+  });
+  return [...ki];
+}
+// Best candidate: just above the last reading (also tries the last digit as a decimal drum)
+function legjobb(jeloltek) {
+  const ertekek = [];
+  jeloltek.forEach(t => { ertekek.push(Number(t)); ertekek.push(Number(t) / 10); });
+  const jo = ertekek.filter(n => n > utolso && n - utolso <= 5000).sort((a, b) => a - b);
+  return jo.length ? Math.round(jo[0] * 10) / 10 : null;
+}
+function olvasottBeir(v) {
+  $('zaro').value = String(v);
+  $('zaro').classList.add('olvasott');
+  szamol(); uresJeloles();
+}
+function chipek(jeloltek, javaslat) {
+  const box = $('ocrChipek'); box.innerHTML = '';
+  jeloltek.slice(0, 6).forEach(t => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t;
+    b.onclick = () => { olvasottBeir(Number(t)); $('ocrMegj').textContent = `Using ${t} – check it against the photo!`; $('ocrMegj').className = 'megj'; };
+    box.append(b);
+  });
+}
+
+$('foto').addEventListener('change', async () => {
+  const file = $('foto').files[0];
+  if (!file) return;
+  try {
+    kep = await kepMeretez(file);
+  } catch (e) { $('ocrMegj').textContent = e.message; $('ocrMegj').className = 'megj err'; return; }
+  $('elonezetKep').src = kep;
+  $('elonezet').classList.add('van');
+  $('ocrChipek').innerHTML = '';
+  $('ocrMegj').textContent = '🔍 Reading the meter…'; $('ocrMegj').className = 'megj';
+
+  const hibak = [];
+  const helyi = (async () => {
+    try {
+      const w = await tess(), ki = [];
+      for (const v of await valtozatok(kep)) ki.push(...szamokSzovegbol((await w.recognize(v)).data.text));
+      return ki;
+    } catch (e) { hibak.push('phone: ' + e.message); return []; }
+  })();
+  const szerver = (async () => {
+    try {
+      const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                       body: JSON.stringify({ action: 'ocr', kep }) });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.hiba);
+      return szamokSzovegbol(d.szoveg).concat(d.javaslat ? [String(d.javaslat)] : []);
+    } catch (e) { hibak.push('server: ' + e.message); return []; }
+  })();
+
+  const jeloltek = [...new Set([...(await helyi), ...(await szerver)])];
+  const javaslat = legjobb(jeloltek);
+  // order chips: the suggestion first, then the ones closest to the last reading
+  jeloltek.sort((a, b) => Math.abs(a - utolso) - Math.abs(b - utolso));
+  chipek(jeloltek, javaslat);
+  if (javaslat !== null) {
+    olvasottBeir(javaslat);
+    $('ocrMegj').textContent = `Read: ${fmt(javaslat)} – check it against the photo and correct if needed!`;
+    $('ocrMegj').className = 'megj';
+  } else if (jeloltek.length) {
+    $('ocrMegj').textContent = 'Numbers found – tap the correct one, or type it in:';
+    $('ocrMegj').className = 'megj err';
+  } else {
+    $('ocrMegj').textContent = 'Could not read the meter' + (hibak.length ? ' (' + hibak.join('; ') + ')' : '') +
+      '. Please type it in – the photo will still be saved. Tip: fill the frame with the digits, avoid glare.';
+    $('ocrMegj').className = 'megj err';
+  }
+});
+
+// FOREIGN always first, the rest in alphabetical order
+function rendez(lista) {
+  return [...lista].sort((a, b) => (b === 'IDEGEN') - (a === 'IDEGEN') || a.localeCompare(b, 'en'));
+}
+
+// --- Load data ---
+async function betolt() {
+  try {
+    const r = await fetch(API_URL);
+    const d = await r.json();
+    const valasztott = $('lajstrom').value;
+    $('lajstrom').innerHTML = '<option value="">Select…</option>' +
+      rendez(d.lajstromok).map(l => {
+        const v = String(l).replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        return `<option value="${v}">${l === 'IDEGEN' ? 'FOREIGN' : v}</option>`;
+      }).join('');
+    $('lajstrom').value = valasztott;
+    idegenValt(false);
+    utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
+    if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
+    $('utolso').textContent = fmt(utolso);
+    tartaly(keszlet);
+    hobbsInfo();
+    $('kuld').disabled = false;
+    if ($('uzenet').textContent.startsWith('Could not load')) uzenet('');
+    szamol();
+  } catch (e) {
+    uzenet('Could not load data. Check your internet connection / the API_URL.', 'err');
+  }
+}
+
+// --- Save ---
+$('urlap').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  uresJeloles();
+  if (kotelezoMezok().some(el => !el.value.trim())) return enterData();
+
+  const valasztott = $('lajstrom').value;
+  const idegen = $('idegen').value.trim().toUpperCase();
+  const lajstrom = aktLajstrom();
+  const zaro = szam($('zaro').value);
+  const hobbs = szam($('hobbs').value);
+  const nev = $('nev').value.trim();
+  if (isNaN(hobbs) || hobbs < 0) return uzenet('Invalid Hobbs value.', 'err');
+  if (isNaN(zaro)) return uzenet('Invalid meter reading.', 'err');
+  if (zaro <= utolso) return uzenet('Closing meter reading must be greater than the last one.', 'err');
+
+  const elozoHobbs = hobbsMap[lajstrom];
+  if (elozoHobbs !== undefined && hobbs < elozoHobbs &&
+      !confirm(`Hobbs (${fmt(hobbs)}) is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}). Are you sure?`)) return;
+  const m = zaro - utolso;
+  if (m > keszlet && !confirm(`Fuel pumped (${fmt(m)} l) is more than the current quantity (${fmt(keszlet)} l). Is the meter reading correct?`)) return;
+
+  $('kuld').disabled = true; uzenet(kep ? 'Saving (uploading photo)…' : 'Saving…');
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids a CORS preflight
+      body: JSON.stringify({ lajstrom: valasztott, idegen, zaro, hobbs, nev, kep })
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.hiba || 'Unknown error');
+    try { localStorage.setItem('nev', nev); } catch (e) {}
+    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${lajstrom})${d.foto ? ', with photo' : ''}` +
+           (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
+    utolso = d.utolso; $('utolso').textContent = fmt(utolso);
+    keszlet = d.keszlet; tartaly(keszlet);
+    hobbsMap[lajstrom] = hobbs;
+    if (napi.length) { napi[napi.length - 1].l += d.mennyiseg; grafikon(); }
+    $('zaro').value = ''; $('zaro').classList.remove('olvasott');
+    $('hobbs').value = ''; $('lajstrom').value = ''; idegenValt(false);
+    fotoTorles(); szamol(); uresJeloles();
+  } catch (e) {
+    uzenet('Error: ' + e.message, 'err');
+  } finally {
+    $('kuld').disabled = false;
+  }
+});
+
+// --- Start ---
+$('datum').value = new Date().toLocaleDateString('en-GB', { year:'numeric', month:'2-digit', day:'2-digit' });
+try { $('nev').value = localStorage.getItem('nev') || ''; } catch (e) {}
+$('utolso').textContent = fmt(utolso);
+tartaly(keszlet);
+grafikon();
+uresJeloles();
+betolt();
+</script>
+</body>
+</html>

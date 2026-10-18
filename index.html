@@ -280,7 +280,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.6</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.7</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -301,8 +301,8 @@
       </svg>
       <div class="tartaly-adat">
         <h2>Current Quantity</h2>
-        <div class="liter" id="keszletSzoveg">2,100 l</div>
-        <div class="kap" id="kapSzoveg">/ 5,000 l (42%)</div>
+        <div class="liter" id="keszletSzoveg">945 l</div>
+        <div class="kap" id="kapSzoveg">/ 5,000 l (19%)</div>
         <div class="allapot" id="allapot"></div>
       </div>
       <div class="jobb-sav">
@@ -504,7 +504,7 @@ let napi = [];
 // DEMO: fills the 14-day chart with sample refuels (20–180 l). Set to false to show real data only.
 const DEMO_ADAT = true;
 const DEMO_LITER = [72, 0, 118, 95, 40, 150, 66, 0, 88, 130, 52, 101, 0, 77, 65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];  // 28 days, oldest first
-let utolso = 247345, keszlet = 2100, kapacitas = 5000, hobbsMap = {}, kep = null;
+let utolso = 247345, keszlet = 945, kapacitas = 5000, hobbsMap = {}, kep = null;
 
 const fmt = n => n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
 const szam = s => parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));

@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LHDK Avgas Refueling</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15181b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LHDK Fuel">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <style>
   :root { --bg:#f4f5f7; --card:#fff; --text:#1d2125; --muted:#6b7280; --accent:#0b6bcb; --ok:#127a3e; --err:#d92d20; --line:#d6d9de;
           --tartaly-ures:#eef0f2; --tartaly-keret:#9aa1a9; --zold:#22a55b; --narancs:#f08c00; --piros:#e03131;
@@ -269,6 +275,11 @@
   .mentes-sav { margin:0 0 12px; }
   #uzenet { font-weight:700; margin-top:8px; text-align:center; }
   #uzenet:empty { display:none; }
+  .halozat { margin-top:8px; padding:8px 12px; border-radius:10px; font-size:.85rem; font-weight:600; text-align:center;
+             background:color-mix(in srgb, var(--narancs) 15%, transparent); color:var(--text); }
+  .halozat.hiba { background:color-mix(in srgb, var(--err) 14%, transparent); }
+  .halozat[hidden] { display:none; }
+  .halozat button { margin-left:6px; font:inherit; font-size:.8rem; padding:3px 10px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
   /* Big PROCEED TO SAVE button, above the tile tabs */
   #uzenet.enter { font-size:1.3rem; letter-spacing:.06em; }
   #kuld { width:100%; height:68px; font-size:1.35rem; font-weight:800; letter-spacing:.1em; border:0; border-radius:12px;
@@ -280,7 +291,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.8</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.6.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -401,6 +412,7 @@
   <div class="mentes-sav">
     <button id="kuld" type="submit" form="urlap" disabled>PROCEED TO SAVE</button>
     <div id="uzenet" role="status" aria-live="assertive"></div>
+    <div id="halozat" class="halozat" hidden></div>
   </div>
 
   <nav class="csempe-fulek" id="csempeFulek">
@@ -501,7 +513,7 @@ const NARANCS_HATAR = 500;  // orange up to 1500, red below
 const $ = id => document.getElementById(id);
 let napi = [];
 // DEMO: fills the 14-day chart with sample refuels (20–180 l). Set to false to show real data only.
-const DEMO_ADAT = true;
+const DEMO_ADAT = false;
 const DEMO_LITER = [72, 0, 118, 95, 40, 150, 66, 0, 88, 130, 52, 101, 0, 77, 65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];  // 28 days, oldest first
 let utolso = 247345, keszlet = 945, kapacitas = 5000, hobbsMap = {}, kep = null;
 
@@ -867,6 +879,7 @@ function naploRajz() {
     add(s2, '', '👤 ' + x.n);
     if (x.h !== null && x.h !== undefined) add(s2, '', 'Hobbs ' + fmt(x.h));
     if (x.z) add(s2, '', 'Meter ' + (x.e ? fmt(x.e) + ' → ' : '') + fmt(x.z));
+    if (x.varo) add(s2, '', '⏳ waiting to upload');
     if (x.f) { const a = add(s2, '', '📷 photo', 'a'); a.href = x.f; a.target = '_blank'; a.rel = 'noopener'; }
     sor.append(s1, s2); box.append(sor);
   });
@@ -1048,34 +1061,98 @@ function rendez(lista) {
 }
 
 // --- Load data ---
+// --- Offline support: last data is cached on the phone, refuels made offline wait in an outbox ---
+const CACHE_KULCS = 'lhdk_adat', SOR_KULCS = 'lhdk_kuldendo', HIBAS_KULCS = 'lhdk_hibas';
+const tarol = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const olvas = (k, alap) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null ? alap : v; } catch (e) { return alap; } };
+let adatIdo = null;   // when the shown data was fetched
+
+function adatAlkalmaz(d) {
+  const valasztott = $('lajstrom').value;
+  $('lajstrom').innerHTML = '<option value="">Select…</option>' +
+    rendez(d.lajstromok || []).map(l => {
+      const v = String(l).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      return `<option value="${v}">${l === 'IDEGEN' ? 'FOREIGN' : v}</option>`;
+    }).join('');
+  $('lajstrom').value = valasztott;
+  idegenValt(false);
+  utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
+  // refuels still waiting in the outbox are not on the server yet – keep them in the local picture
+  sorban().forEach(x => { if (x.zaro > utolso) { keszlet = Math.max(0, keszlet - (x.zaro - utolso)); utolso = x.zaro; } });
+  if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
+  if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
+  if (Array.isArray(d.naplo)) { naplo = sorban().map(x => ({ d: x.d, t: x.t, g: x.g, n: x.nev, e: null, z: x.zaro, l: x.l, h: x.hobbs, f: '', varo: true })).concat(d.naplo); naploRajz(); }
+  if (d.havi) { havi = d.havi; torta(); }
+  $('utolso').textContent = fmt(utolso);
+  tartaly(keszlet);
+  hobbsInfo(); elorejelzes();
+  $('kuld').disabled = false;
+}
+
 async function betolt() {
   try {
-    const r = await fetch(API_URL);
+    const r = await fetch(API_URL, { cache: 'no-store' });
     const d = await r.json();
-    const valasztott = $('lajstrom').value;
-    $('lajstrom').innerHTML = '<option value="">Select…</option>' +
-      rendez(d.lajstromok).map(l => {
-        const v = String(l).replace(/</g, '&lt;').replace(/"/g, '&quot;');
-        return `<option value="${v}">${l === 'IDEGEN' ? 'FOREIGN' : v}</option>`;
-      }).join('');
-    $('lajstrom').value = valasztott;
-    idegenValt(false);
-    utolso = d.utolso; keszlet = d.keszlet; kapacitas = d.kapacitas || 5000; hobbsMap = d.hobbs || {};
-    if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
-    if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
-    if (Array.isArray(d.naplo)) { naplo = d.naplo; naploRajz(); }
-    elorejelzes();
-    if (d.havi) { havi = d.havi; torta(); }
-    $('utolso').textContent = fmt(utolso);
-    tartaly(keszlet);
-    hobbsInfo();
-    $('kuld').disabled = false;
+    if (!d || !Array.isArray(d.lajstromok)) throw new Error('bad data');
+    adatIdo = Date.now();
+    tarol(CACHE_KULCS, { ido: adatIdo, adat: d });
+    adatAlkalmaz(d);
     if ($('uzenet').textContent.startsWith('Could not load')) uzenet('');
-    szamol();
   } catch (e) {
-    uzenet('Could not load data. Check your internet connection / the API_URL.', 'err');
+    const c = olvas(CACHE_KULCS, null);
+    if (c && c.adat) { adatIdo = c.ido; adatAlkalmaz(c.adat); }
+    else { $('kuld').disabled = false; uzenet('No connection and no saved data yet – refuels are stored on this phone and uploaded later.', 'err'); }
   }
+  allapot();
 }
+
+// --- Outbox ---
+function sorban() { return olvas(SOR_KULCS, []); }
+function ujId() { return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g, ''); }
+let kuldesFolyik = false;
+async function sorKuldes() {
+  if (kuldesFolyik || !navigator.onLine) { allapot(); return; }
+  let sor = sorban(); if (!sor.length) { allapot(); return; }
+  kuldesFolyik = true; allapot();
+  let feltoltve = 0;
+  try {
+    while (sor.length) {
+      const x = sor[0];
+      let d;
+      try {
+        const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(x.kuld) });
+        d = await r.json();
+      } catch (e) { break; }                                   // still offline – try again later
+      if (!d.ok && d.ujra) break;                               // server busy – try again later
+      sor.shift(); tarol(SOR_KULCS, sor);
+      if (d.ok) feltoltve++;
+      else { const h = olvas(HIBAS_KULCS, []); h.push({ ...x, hiba: d.hiba }); tarol(HIBAS_KULCS, h); }
+    }
+  } finally { kuldesFolyik = false; }
+  if (feltoltve) { uzenet(`✔ ${feltoltve} offline refuel${feltoltve > 1 ? 's' : ''} uploaded`, 'ok'); betolt(); }
+  allapot();
+}
+function allapot() {
+  const sor = sorban(), hibas = olvas(HIBAS_KULCS, []), el = $('halozat');
+  const reszek = [];
+  if (!navigator.onLine) reszek.push('Offline – refuels are stored on this phone');
+  if (sor.length) reszek.push(`⏳ ${sor.length} refuel${sor.length > 1 ? 's' : ''} waiting to upload`);
+  if (!navigator.onLine && adatIdo) reszek.push('data from ' + new Date(adatIdo).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
+  el.className = 'halozat' + (hibas.length ? ' hiba' : '');
+  el.innerHTML = '';
+  if (hibas.length) {
+    const t = document.createElement('span');
+    t.textContent = `⚠ ${hibas.length} offline refuel${hibas.length > 1 ? 's' : ''} could not be uploaded (${hibas.map(h => h.g + ' ' + h.zaro + ': ' + h.hiba).join('; ')}). Please tell the fuel manager.`;
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = 'OK';
+    b.onclick = () => { tarol(HIBAS_KULCS, []); allapot(); };
+    el.append(t, b);
+  } else el.textContent = reszek.join(' · ');
+  el.hidden = !reszek.length && !hibas.length;
+}
+window.addEventListener('online', () => { allapot(); sorKuldes(); });
+window.addEventListener('offline', allapot);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { sorKuldes(); } });
+setInterval(() => { if (sorban().length) sorKuldes(); }, 60000);
 
 // --- Save ---
 // --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
@@ -1124,37 +1201,56 @@ $('oszBezar').addEventListener('click', oszZar);
 $('oszVissza').addEventListener('click', oszZar);
 $('oszAblak').addEventListener('click', e => { if (e.target === $('oszAblak')) oszZar(); });
 
+function helyiFrissites(x, liter, varo) {
+  // update the screen right away (online or offline)
+  pumpaMutat(liter, x.lajstrom);
+  utolso = Math.max(utolso, x.zaro); $('utolso').textContent = fmt(utolso);
+  hobbsMap[x.lajstrom] = x.hobbs;
+  if (napi.length) { napi[napi.length - 1].l += liter; grafikon(); }
+  const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
+  naplo.unshift({ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: x.lajstrom, n: x.nev,
+                  e: x.zaro - liter, z: x.zaro, l: liter, h: x.hobbs, f: '', varo: !!varo });
+  naploRajz();
+  const hk = hoKulcs(new Date()), g = x.valasztott === 'IDEGEN' ? 'FOREIGN' : x.valasztott;
+  havi[hk] = havi[hk] || {}; havi[hk][g] = (havi[hk][g] || 0) + liter; torta();
+  $('zaro').value = ''; $('hobbs').value = ''; $('lajstrom').value = ''; idegenValt(false);
+  uresJeloles();
+}
+
 $('oszMent').addEventListener('click', async () => {
   if (!fuggo) return;
-  const { valasztott, idegen, lajstrom, zaro, hobbs, nev } = fuggo;
+  const x = fuggo, id = ujId(), most = new Date();
+  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs, nev: x.nev, id, ido: most.toISOString() };
+  try { localStorage.setItem('nev', x.nev); } catch (e) {}
   $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
   $('kuld').disabled = true; uzenet('Saving…');
+  const offlineMentes = () => {
+    // no connection: keep it on the phone, upload later (the server places it correctly even if others saved meanwhile)
+    const sor = sorban();
+    sor.push({ kuld: { ...kuld, offline: true }, d: kuld.ido.slice(0, 10).replace(/-/g, '.'), t: String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0'),
+               g: x.lajstrom, nev: x.nev, zaro: x.zaro, hobbs: x.hobbs, l: x.m });
+    tarol(SOR_KULCS, sor);
+    oszZar(); fuggo = null;
+    keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
+    helyiFrissites(x, x.m, true);
+    uzenet(`✔ Saved on this phone: ${fmt(x.m)} l (${x.lajstrom}) – it will upload automatically when online`, 'ok');
+    allapot(); elorejelzes();
+  };
   try {
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids a CORS preflight
-      body: JSON.stringify({ lajstrom: valasztott, idegen, zaro, hobbs, nev })
-    });
-    const d = await r.json();
+    if (!navigator.onLine) return offlineMentes();
+    let d;
+    try {
+      const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(kuld) });
+      d = await r.json();
+    } catch (e) { return offlineMentes(); }                     // network failed → outbox
+    if (!d.ok && d.ujra) return offlineMentes();                 // server busy → outbox
     if (!d.ok) throw new Error(d.hiba || 'Unknown error');
     oszZar(); fuggo = null;
-    try { localStorage.setItem('nev', nev); } catch (e) {}
-    pumpaMutat(d.mennyiseg, lajstrom);
-    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${lajstrom})` +
-           (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
-    utolso = d.utolso; $('utolso').textContent = fmt(utolso);
     keszlet = d.keszlet; tartaly(keszlet);
-    hobbsMap[lajstrom] = hobbs;
-    if (napi.length) { napi[napi.length - 1].l += d.mennyiseg; grafikon(); }
-    { const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
-      naplo.unshift({ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: lajstrom, n: nev,
-                      e: zaro - d.mennyiseg, z: zaro, l: d.mennyiseg, h: hobbs, f: '' });
-      naploRajz(); elorejelzes(); }
-    { const k = hoKulcs(new Date()), g = valasztott === 'IDEGEN' ? 'FOREIGN' : valasztott;
-      havi[k] = havi[k] || {}; havi[k][g] = (havi[k][g] || 0) + d.mennyiseg; torta(); }
-    $('zaro').value = '';
-    $('hobbs').value = ''; $('lajstrom').value = ''; idegenValt(false);
-    uresJeloles();
+    helyiFrissites(x, d.mennyiseg);
+    utolso = d.utolso; $('utolso').textContent = fmt(utolso);
+    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
+    elorejelzes();
   } catch (e) {
     $('oszFigy').textContent = 'Error: ' + e.message;
     uzenet('Error: ' + e.message, 'err');
@@ -1185,7 +1281,11 @@ torta();
 naploRajz();
 elorejelzes();
 uresJeloles();
-betolt();
+allapot();
+betolt().then(sorKuldes);
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>

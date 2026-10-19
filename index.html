@@ -15,7 +15,7 @@
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
-  main { max-width:560px; margin:0 auto; padding:20px 16px 170px; }
+  main { max-width:560px; margin:0 auto; padding:20px 16px 40px; }
   h1 { font-size:1.4rem; margin:0 0 4px; }
   .copyright .verzio { opacity:.55; margin-left:6px; font-variant-numeric:tabular-nums; }
   .copyright { font-size:.75rem; color:var(--muted); letter-spacing:.02em; margin:0 0 16px; }
@@ -266,10 +266,10 @@
   .szall-osszeg dd#szoLiter { color:var(--sarga); }
 
   /* Big SAVE button fixed at the bottom of the screen */
-  .mentes-sav { position:fixed; left:0; right:0; bottom:0; z-index:10; background:color-mix(in srgb, var(--bg) 92%, transparent);
-                backdrop-filter:blur(6px); border-top:1px solid var(--line); padding:10px 16px calc(12px + env(safe-area-inset-bottom)); }
-  .mentes-belso { max-width:560px; margin:0 auto; }
-  #uzenet { min-height:1.4em; font-weight:700; margin-bottom:8px; text-align:center; }
+  .mentes-sav { margin:0 0 12px; }
+  #uzenet { font-weight:700; margin-top:8px; text-align:center; }
+  #uzenet:empty { display:none; }
+  /* Big PROCEED TO SAVE button, above the tile tabs */
   #uzenet.enter { font-size:1.3rem; letter-spacing:.06em; }
   #kuld { width:100%; height:68px; font-size:1.35rem; font-weight:800; letter-spacing:.1em; border:0; border-radius:12px;
           background:var(--accent); color:#fff; cursor:pointer; box-shadow:0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
@@ -280,7 +280,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.7</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.5.8</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -398,6 +398,11 @@
   </form>
 
   <!-- Three tiles, swipe sideways: monthly pie · refuel log · forecast -->
+  <div class="mentes-sav">
+    <button id="kuld" type="submit" form="urlap" disabled>PROCEED TO SAVE</button>
+    <div id="uzenet" role="status" aria-live="assertive"></div>
+  </div>
+
   <nav class="csempe-fulek" id="csempeFulek">
     <button type="button" data-i="0">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button>
   </nav>
@@ -483,12 +488,6 @@
   </div>
 </div>
 
-<div class="mentes-sav">
-  <div class="mentes-belso">
-    <div id="uzenet" role="status" aria-live="assertive"></div>
-    <button id="kuld" type="submit" form="urlap" disabled>PROCEED TO SAVE</button>
-  </div>
-</div>
 
 <script>
 // ▼▼▼ PASTE THE APPS SCRIPT WEB APP URL HERE ▼▼▼

@@ -45,6 +45,9 @@
             letter-spacing:.12em; color:var(--muted); display:flex; align-items:center; gap:6px; }
   .dk-ora::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--muted); box-shadow:0 0 5px color-mix(in srgb, var(--muted) 70%, transparent); animation: dk-pulzus 2s ease-in-out infinite; }
   .dk-ora::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, color-mix(in srgb, var(--muted) 55%, transparent), transparent); }
+  .fuzet-jel { color:#e5484d; font-weight:800; animation: fuzet-villog 1s ease-in-out infinite; white-space:nowrap; }
+  @keyframes fuzet-villog { 0%,100% { opacity:1; } 50% { opacity:.2; } }
+  @media (prefers-reduced-motion: reduce) { .fuzet-jel { animation:none; } }
   @keyframes dk-pulzus { 0%,100% { opacity:1; } 50% { opacity:.3; } }
   @media (prefers-reduced-motion: reduce) { .dk-ora::before { animation:none; } }
   .oszlop + .oszlop .info:first-of-type { margin-top:12px; }
@@ -300,7 +303,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.2</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1174,6 +1177,11 @@ setInterval(() => { if (sorban().length) sorKuldes(); }, 60000);
 // --- Save ---
 // --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
 let fuggo = null;
+function fuzetJel() {           // blinking red paper-log reminder after the save message
+  if (!FUZET_EMLEKEZTETO) return;
+  const u = $('uzenet'); u.append(' · ');
+  const j = document.createElement('span'); j.className = 'fuzet-jel'; j.textContent = '📒 Please also write it in the paper log.'; u.append(j);
+}
 const FUZET_EMLEKEZTETO = true;   // ramp-up: remind to also write it in the paper log (set to false when the logbook is retired)
 $('urlap').addEventListener('submit', ev => {
   ev.preventDefault();
@@ -1265,7 +1273,7 @@ $('oszMent').addEventListener('click', async () => {
     const sajat = (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m;
     helyiFrissites(x, sajat, true);
     uzenet(`✔ Saved on this phone: ${fmt(sajat)} l (${x.lajstrom})` + (sajat < x.m ? ` booked to you, the other ${fmt(x.m - sajat)} l will be recorded as UNRECORDED` : '') +
-           ' – it will upload automatically when online' + (FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : ''), 'ok');
+           ' – it will upload automatically when online', 'ok'); fuzetJel();
     allapot(); elorejelzes();
   };
   try {
@@ -1282,7 +1290,7 @@ $('oszMent').addEventListener('click', async () => {
     helyiFrissites(x, d.mennyiseg);
     if (d.hiany) betolt();
     utolso = d.utolso; $('utolso').textContent = fmt(utolso);
-    const fuzet = FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : '';
+    const fuzet = '';
     const gyanus = kijelzo < x.m - 1;                          // the user said the display shows less than the meter difference
     if (d.hiany > 0) {
       uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l booked to you (${x.lajstrom}). The other ${fmt(d.hiany)} l was recorded as UNRECORDED (an earlier refuel nobody logged) – the fuel manager has been notified.` + fuzet, 'ok');
@@ -1291,6 +1299,7 @@ $('oszMent').addEventListener('click', async () => {
     } else {
       uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : '') + fuzet, d.figyelmeztetes ? 'err' : 'ok');
     }
+    if (!(gyanus && d.hiany === undefined)) fuzetJel();
     elorejelzes();
   } catch (e) {
     $('oszFigy').textContent = 'Error: ' + e.message;

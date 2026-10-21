@@ -300,7 +300,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.1</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1262,8 +1262,10 @@ $('oszMent').addEventListener('click', async () => {
     tarol(SOR_KULCS, sor);
     oszZar(); fuggo = null;
     keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
-    helyiFrissites(x, (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m, true);
-    uzenet(`✔ Saved on this phone: ${fmt(x.m)} l (${x.lajstrom}) – it will upload automatically when online` + (FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : ''), 'ok');
+    const sajat = (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m;
+    helyiFrissites(x, sajat, true);
+    uzenet(`✔ Saved on this phone: ${fmt(sajat)} l (${x.lajstrom})` + (sajat < x.m ? ` booked to you, the other ${fmt(x.m - sajat)} l will be recorded as UNRECORDED` : '') +
+           ' – it will upload automatically when online' + (FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : ''), 'ok');
     allapot(); elorejelzes();
   };
   try {
@@ -1280,9 +1282,15 @@ $('oszMent').addEventListener('click', async () => {
     helyiFrissites(x, d.mennyiseg);
     if (d.hiany) betolt();
     utolso = d.utolso; $('utolso').textContent = fmt(utolso);
-    if (FUZET_EMLEKEZTETO) setTimeout(() => { const u = $('uzenet'); if (u.className === 'ok') u.textContent += ' · 📒 Please also write it in the paper log.'; }, 0);
-    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.hiany ? ` – ${fmt(d.hiany)} l from an earlier unrecorded refuel was logged separately, the fuel manager has been notified` : '') +
-           (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
+    const fuzet = FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : '';
+    const gyanus = kijelzo < x.m - 1;                          // the user said the display shows less than the meter difference
+    if (d.hiany > 0) {
+      uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l booked to you (${x.lajstrom}). The other ${fmt(d.hiany)} l was recorded as UNRECORDED (an earlier refuel nobody logged) – the fuel manager has been notified.` + fuzet, 'ok');
+    } else if (gyanus && d.hiany === undefined) {
+      uzenet(`⚠ Saved as ${fmt(d.mennyiseg)} l (${x.lajstrom}) – the server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).`, 'err');
+    } else {
+      uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : '') + fuzet, d.figyelmeztetes ? 'err' : 'ok');
+    }
     elorejelzes();
   } catch (e) {
     $('oszFigy').textContent = 'Error: ' + e.message;

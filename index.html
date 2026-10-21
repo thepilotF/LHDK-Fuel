@@ -60,6 +60,15 @@
   .osz-lista hr { grid-column:1 / span 2; border:0; border-top:1px solid var(--line); margin:2px 0; width:100%; }
   .osz-figy { margin:10px 0 0; padding:10px 12px; border-radius:10px; background:color-mix(in srgb, var(--narancs) 14%, transparent); color:var(--text); font-size:.85rem; line-height:1.35; }
   .osz-figy:empty { display:none; }
+  .kijelzo-kerdes { margin:12px 0 0; padding:12px 14px; border-radius:12px; background:var(--bg); }
+  .kk-cim { font-size:1rem; line-height:1.35; }
+  .kk-cim b { color:var(--zold); }
+  .kk-nem { margin-top:8px; padding:0; border:0; background:none; color:var(--accent); font:inherit; font-size:.9rem; font-weight:600; text-decoration:underline; cursor:pointer; }
+  .kk-bevitel[hidden] { display:none; }
+  .kk-bevitel label { margin:10px 0 6px; font-size:.9rem; }
+  .kk-sor { display:flex; align-items:center; gap:8px; }
+  .kk-sor input { max-width:140px; font-size:1.2rem; font-weight:700; }
+  #oszMent { white-space:nowrap; }
 
   /* Fuel pumped: big green number, shown after a refuel is saved */
   .ket-oszlop .info.pumpa { min-height:120px; justify-content:center; gap:4px; padding:12px; }
@@ -291,7 +300,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.6.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -451,6 +460,14 @@
   <div class="szall-panel" role="dialog" aria-modal="true" aria-labelledby="oszCim">
     <div class="szall-fej"><b id="oszCim">Check before saving</b><button type="button" class="szall-x" id="oszBezar" aria-label="Back to edit">✕</button></div>
     <dl class="osz-lista" id="oszLista"></dl>
+    <div class="kijelzo-kerdes" id="kijelzoKerdes">
+      <div class="kk-cim">Does the pump's reset display show <b id="kkLiter">–</b>?</div>
+      <button type="button" class="kk-nem" id="kkNem">No, it shows a different amount</button>
+      <div class="kk-bevitel" id="kkBevitel" hidden>
+        <label for="kkErtek">Pump display shows</label>
+        <div class="kk-sor"><input id="kkErtek" type="text" inputmode="decimal" autocomplete="off"><span>l</span></div>
+      </div>
+    </div>
     <div class="osz-figy" id="oszFigy"></div>
     <div class="szall-ket">
       <button type="button" class="szall-gomb masodlagos" id="oszVissza">Edit</button>
@@ -1157,6 +1174,7 @@ setInterval(() => { if (sorban().length) sorKuldes(); }, 60000);
 // --- Save ---
 // --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
 let fuggo = null;
+const FUZET_EMLEKEZTETO = true;   // ramp-up: remind to also write it in the paper log (set to false when the logbook is retired)
 $('urlap').addEventListener('submit', ev => {
   ev.preventDefault();
   uresJeloles();
@@ -1194,9 +1212,16 @@ $('urlap').addEventListener('submit', ev => {
     dl.append(dt, dd);
   });
   $('oszFigy').textContent = figy.length ? '⚠ ' + figy.join(' ') : '';
+  $('kkLiter').textContent = fmt(m) + ' l';
+  $('kkBevitel').hidden = true; $('kkNem').hidden = false; $('kkErtek').value = '';
+  $('oszMent').textContent = `Yes, ${fmt(m)} l – SAVE`;
   $('oszAblak').hidden = false;
 });
 function oszZar() { $('oszAblak').hidden = true; }
+$('kkNem').addEventListener('click', () => {
+  $('kkBevitel').hidden = false; $('kkNem').hidden = true; $('oszMent').textContent = 'SAVE';
+  $('kkErtek').focus();
+});
 $('oszBezar').addEventListener('click', oszZar);
 $('oszVissza').addEventListener('click', oszZar);
 $('oszAblak').addEventListener('click', e => { if (e.target === $('oszAblak')) oszZar(); });
@@ -1220,7 +1245,12 @@ function helyiFrissites(x, liter, varo) {
 $('oszMent').addEventListener('click', async () => {
   if (!fuggo) return;
   const x = fuggo, id = ujId(), most = new Date();
-  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs, nev: x.nev, id, ido: most.toISOString() };
+  let kijelzo = x.m;                                   // "Yes" = the pump display matches the meter difference
+  if (!$('kkBevitel').hidden) {
+    kijelzo = szam($('kkErtek').value);
+    if (isNaN(kijelzo) || kijelzo < 0) { $('kkErtek').classList.add('ures'); $('oszFigy').textContent = 'Enter what the pump display shows.'; enterDataHang(); return; }
+  }
+  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
   try { localStorage.setItem('nev', x.nev); } catch (e) {}
   $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
   $('kuld').disabled = true; uzenet('Saving…');
@@ -1232,8 +1262,8 @@ $('oszMent').addEventListener('click', async () => {
     tarol(SOR_KULCS, sor);
     oszZar(); fuggo = null;
     keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
-    helyiFrissites(x, x.m, true);
-    uzenet(`✔ Saved on this phone: ${fmt(x.m)} l (${x.lajstrom}) – it will upload automatically when online`, 'ok');
+    helyiFrissites(x, (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m, true);
+    uzenet(`✔ Saved on this phone: ${fmt(x.m)} l (${x.lajstrom}) – it will upload automatically when online` + (FUZET_EMLEKEZTETO ? ' · 📒 Please also write it in the paper log.' : ''), 'ok');
     allapot(); elorejelzes();
   };
   try {
@@ -1248,8 +1278,11 @@ $('oszMent').addEventListener('click', async () => {
     oszZar(); fuggo = null;
     keszlet = d.keszlet; tartaly(keszlet);
     helyiFrissites(x, d.mennyiseg);
+    if (d.hiany) betolt();
     utolso = d.utolso; $('utolso').textContent = fmt(utolso);
-    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
+    if (FUZET_EMLEKEZTETO) setTimeout(() => { const u = $('uzenet'); if (u.className === 'ok') u.textContent += ' · 📒 Please also write it in the paper log.'; }, 0);
+    uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.hiany ? ` – ${fmt(d.hiany)} l from an earlier unrecorded refuel was logged separately, the fuel manager has been notified` : '') +
+           (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : ''), d.figyelmeztetes ? 'err' : 'ok');
     elorejelzes();
   } catch (e) {
     $('oszFigy').textContent = 'Error: ' + e.message;

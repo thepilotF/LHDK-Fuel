@@ -303,7 +303,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.2</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.3</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -538,6 +538,7 @@ const DEMO_LITER = [72, 0, 118, 95, 40, 150, 66, 0, 88, 130, 52, 101, 0, 77, 65,
 let utolso = 247345, keszlet = 945, kapacitas = 5000, hobbsMap = {}, kep = null;
 
 const fmt = n => n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+const egesz = n => String(Math.round(Number(n) || 0));   // whole number, no separator (tank + last meter cards)
 const szam = s => parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));
 
 function uzenet(szoveg, osztaly) { $('uzenet').textContent = szoveg; $('uzenet').className = osztaly || ''; }
@@ -950,12 +951,12 @@ function tartaly(liter) {
   $('allapot').textContent = szoveg;
   $('allapot').style.color = szin;
   $('tartalyKartya').classList.toggle('alacsony', liter < NARANCS_HATAR);
-  $('kapSzoveg').textContent = `/ ${fmt(kapacitas)} l (${Math.round(arany * 100)}%)`;
+  $('kapSzoveg').textContent = `/ ${egesz(kapacitas)} l (${Math.round(arany * 100)}%)`;
 
   const kezd = parseFloat($('keszletSzoveg').dataset.v ?? liter), ido = 1200, t0 = performance.now();
   (function lep(t) {
     const p = Math.min(1, (t - t0) / ido), e = 1 - Math.pow(1 - p, 3);
-    $('keszletSzoveg').textContent = fmt(Math.round(kezd + (liter - kezd) * e)) + ' l';
+    $('keszletSzoveg').textContent = egesz(kezd + (liter - kezd) * e) + ' l';
     if (p < 1) requestAnimationFrame(lep);
   })(t0);
   $('keszletSzoveg').dataset.v = liter;
@@ -1103,7 +1104,7 @@ function adatAlkalmaz(d) {
   if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
   if (Array.isArray(d.naplo)) { naplo = sorban().map(x => ({ d: x.d, t: x.t, g: x.g, n: x.nev, e: null, z: x.zaro, l: x.l, h: x.hobbs, f: '', varo: true })).concat(d.naplo); naploRajz(); }
   if (d.havi) { havi = d.havi; torta(); }
-  $('utolso').textContent = fmt(utolso);
+  $('utolso').textContent = egesz(utolso);
   tartaly(keszlet);
   hobbsInfo(); elorejelzes();
   $('kuld').disabled = false;
@@ -1237,7 +1238,7 @@ $('oszAblak').addEventListener('click', e => { if (e.target === $('oszAblak')) o
 function helyiFrissites(x, liter, varo) {
   // update the screen right away (online or offline)
   pumpaMutat(liter, x.lajstrom);
-  utolso = Math.max(utolso, x.zaro); $('utolso').textContent = fmt(utolso);
+  utolso = Math.max(utolso, x.zaro); $('utolso').textContent = egesz(utolso);
   hobbsMap[x.lajstrom] = x.hobbs;
   if (napi.length) { napi[napi.length - 1].l += liter; grafikon(); }
   const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
@@ -1289,7 +1290,7 @@ $('oszMent').addEventListener('click', async () => {
     keszlet = d.keszlet; tartaly(keszlet);
     helyiFrissites(x, d.mennyiseg);
     if (d.hiany) betolt();
-    utolso = d.utolso; $('utolso').textContent = fmt(utolso);
+    utolso = d.utolso; $('utolso').textContent = egesz(utolso);
     const fuzet = '';
     const gyanus = kijelzo < x.m - 1;                          // the user said the display shows less than the meter difference
     if (d.hiany > 0) {
@@ -1323,7 +1324,7 @@ datumKartya(); setInterval(datumKartya, 15000);
 $('zaro').value = '';
 window.addEventListener('pageshow', () => { $('zaro').value = ''; uresJeloles(); });
 try { $('nev').value = localStorage.getItem('nev') || ''; } catch (e) {}
-$('utolso').textContent = fmt(utolso);
+$('utolso').textContent = egesz(utolso);
 tartaly(keszlet);
 grafikon();
 utolso5();

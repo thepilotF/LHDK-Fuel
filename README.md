@@ -111,3 +111,7 @@ Szabály: **tankolás előtt nullázd a kijelzőt**, utána rögzíts az appban.
 - **Heti egyeztető e-mail**: hétfőnként 7:00-kor a múlt heti tankolások listája, kiemelve a még pótolandó UNRECORDED sorokat.
 - **Papír füzet emlékeztető**: a bevezetés alatt minden mentés után kiírja „Please also write it in the paper log.”
   Kikapcsolás: `index.html`-ben `const FUZET_EMLEKEZTETO = false;`.
+
+## Nyelv (v1.9.0-tól)
+Az app a telefon nyelve alapján automatikusan magyarul vagy angolul jelenik meg (magyar telefon → magyar, minden más → angol).
+A táblázat, az e-mailek és a lajstromok nem változnak; az „UNRECORDED” jelölés mindkét nyelven így marad.

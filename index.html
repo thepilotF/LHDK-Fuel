@@ -326,7 +326,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.2</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -379,7 +379,7 @@
         </g>
         <circle class="k-lyuk" cx="19" cy="49.5" r="2.4"/><circle class="k-lyuk" cx="64" cy="49.5" r="2.4"/><circle class="k-lyuk" cx="82" cy="49.5" r="2.4"/>
       </svg>
-      <span class="szall-szoveg"><b>Fuel delivery</b></span>
+      <span class="szall-szoveg"><b id="szallCsempeSzoveg">Fuel delivery</b></span>
     </button>
   </div>
 
@@ -487,7 +487,7 @@
     <div class="szall-fej"><b id="oszCim">Check before saving</b><button type="button" class="szall-x" id="oszBezar" aria-label="Back to edit">✕</button></div>
     <dl class="osz-lista" id="oszLista"></dl>
     <div class="kijelzo-kerdes" id="kijelzoKerdes">
-      <div class="kk-cim">Does the pump's counter dial show <b id="kkLiter">–</b>?</div>
+      <div class="kk-cim" id="kkCim">Does the pump's counter dial show <b id="kkLiter">–</b>?</div>
       <div class="kk-bevitel" id="kkBevitel" hidden>
         <div class="kk-magyaraz">Someone didn't log an earlier refuel. Enter what the counter dial shows – only that amount is booked to you, the rest is recorded as UNRECORDED.</div>
         <label for="kkErtek">Counter dial shows</label>
@@ -571,6 +571,70 @@
 
 
 <script>
+// --- Language: automatic from the phone's language (Hungarian → hu, everything else → English) ---
+const NYELV = (() => { try { const l = (navigator.languages && navigator.languages[0]) || navigator.language || 'en'; return /^hu\b/i.test(l) ? 'hu' : 'en'; } catch (e) { return 'en'; } })();
+const HU = NYELV === 'hu';
+const L = (en, hu) => HU ? hu : en;
+const LOC = HU ? 'hu-HU' : 'en-GB';
+document.documentElement.lang = NYELV;
+// fixed texts of the page (English → Hungarian)
+const STATIK = {
+  'LHDK Avgas Refueling': 'LHDK Avgas Tankolás',
+  'Current Quantity': 'Aktuális készlet', 'Fuel delivery': 'Üzemanyag-szállítás',
+  'Aircraft Registration': 'Lajstromjel', 'Foreign aircraft registration': 'Külföldi gép lajstromjele',
+  '(optional)': '(nem kötelező)', 'Closing meter reading': 'Záró óraállás', 'Name': 'Név',
+  'Last meter reading': 'Utolsó óraállás', 'Fuel pumped': 'Tankolt mennyiség', 'shown after saving': 'mentés után jelenik meg',
+  'PROCEED TO SAVE': 'TOVÁBB A MENTÉSHEZ', 'Monthly': 'Havi', 'Refuel log': 'Tankolási napló', 'Forecast': 'Előrejelzés',
+  'Select…': 'Válassz…', 'FOREIGN': 'KÜLFÖLDI', 'Now': 'Most', 'Date': 'Dátum',
+  'Check before saving': 'Ellenőrizd mentés előtt',
+  'Someone didn\'t log an earlier refuel. Enter what the counter dial shows – only that amount is booked to you, the rest is recorded as UNRECORDED.':
+    'Valaki nem rögzítette a korábbi tankolását. Írd be, mit mutat a tekerő – csak ennyi kerül a nevedre, a többi UNRECORDED-ként.',
+  'Counter dial shows': 'A tekerő ennyit mutat', 'SAVE': 'MENTÉS', 'Save': 'Mentés',
+  '✗ No, it shows a different amount': '✗ Nem, mást mutat', '✎ Change the entered data': '✎ Adatok módosítása',
+  'Hobbs is empty': 'Üres a Hobbs', 'Would you like to enter the Hobbs reading? You can type it here.': 'Szeretnéd beírni a Hobbs-állást? Itt megteheted.',
+  'No, skip': 'Nem, kihagyom', 'Continue': 'Tovább',
+  'Refuel saved': 'Tankolás mentve', '📒 Please also write it in the paper log.': '📒 Írd be a papír füzetbe is!', 'OK': 'OK',
+  'Password': 'Jelszó', 'Unlock': 'Belépés', 'Quantity received (litres)': 'Érkezett mennyiség (liter)', 'Quantity received': 'Érkezett mennyiség',
+  'Received by': 'Átvevő', 'Delivery note photo': 'Szállítólevél fotó', '📷 Take photo': '📷 Fotó készítése', 'New photo': 'Új fotó',
+  'New tank quantity': 'Új készlet', 'Done': 'Kész',
+  // attributes
+  'Tank level': 'Tartályszint', 'Fuel delivery (password protected)': 'Üzemanyag-szállítás (jelszóval védett)',
+  'e.g. D-EABC': 'pl. D-EABC', 'e.g. 1234.5': 'pl. 1234,5', 'e.g. 3000': 'pl. 3000',
+  'Fuel by aircraft per month': 'Üzemanyag gépenként havonta', 'Next month': 'Következő hónap', 'Previous month': 'Előző hónap',
+  'Fuel forecast': 'Üzemanyag-előrejelzés', 'Back to edit': 'Vissza a szerkesztéshez', 'Back': 'Vissza', 'Close': 'Bezárás', 'Delivery note': 'Szállítólevél'
+};
+function statikFordit() {
+  if (!HU) return;
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n; (n = w.nextNode());) {
+    const k = n.nodeValue.trim();
+    if (k && STATIK[k] !== undefined) n.nodeValue = n.nodeValue.replace(k, STATIK[k]);
+  }
+  document.querySelectorAll('[placeholder],[aria-label],[title],[alt]').forEach(el => ['placeholder', 'aria-label', 'title', 'alt'].forEach(a => {
+    const v = el.getAttribute(a); if (v && STATIK[v] !== undefined) el.setAttribute(a, STATIK[v]);
+  }));
+  document.title = 'LHDK Avgas Tankolás';
+  const cs = document.getElementById('szallCsempeSzoveg'); if (cs) cs.textContent = 'Szállítás';   // short label fits the tile
+}
+statikFordit();
+// server messages (the server answers in English)
+function hibaFord(h) {
+  if (!HU || !h) return h;
+  const T = [
+    [/^Invalid request\.$/, 'Érvénytelen kérés.'], [/^Wrong password\.$/, 'Hibás jelszó.'],
+    [/^Too many requests.*/, 'Túl sok kérés, próbáld újra egy perc múlva.'], [/^Invalid meter reading\.$/, 'Érvénytelen óraállás.'],
+    [/^Unknown registration\.$/, 'Ismeretlen lajstrom.'], [/^Foreign aircraft registration is missing\.$/, 'Hiányzik a külföldi gép lajstroma.'],
+    [/^Invalid Hobbs\.$/, 'Érvénytelen Hobbs.'], [/^Missing name\.$/, 'Hiányzik a név.'],
+    [/^Fuel pumped \((.+) l\) is more than (\d+) l.*/, 'A tankolt mennyiség ($1 l) több mint $2 l – ellenőrizd a záró óraállást.'],
+    [/^Fuel pumped is more than (\d+) l.*/, 'A tankolt mennyiség több mint $1 l – ellenőrizd a záró óraállást.'],
+    [/^Closing meter reading \((.+)\) is not greater than the last one \((.+)\)\.$/, 'A záró óraállás ($1) nem nagyobb az utolsónál ($2).'],
+    [/^No delivery password is set.*/, 'Nincs beállítva szállítási jelszó (Beállítások lap, B6).'], [/^Photo is too large\.$/, 'Túl nagy a fotó.'],
+    [/^Invalid quantity\.$/, 'Érvénytelen mennyiség.'], [/^Missing receiver name\.$/, 'Hiányzik az átvevő neve.'],
+    [/^Missing delivery note photo\.$/, 'Hiányzik a szállítólevél fotója.'], [/^Unknown error$/, 'Ismeretlen hiba']];
+  for (const [re, hu] of T) if (re.test(h)) return h.replace(re, hu);
+  return h;
+}
+
 // ▼▼▼ PASTE THE APPS SCRIPT WEB APP URL HERE ▼▼▼
 const API_URL = 'https://script.google.com/macros/s/AKfycbwBron0VA-VCqBwWJSAUv_mhgOCYr4L3hqbGcAcdRKB6q7HSfGhQ5x8L8bC0GT0CjRl5g/exec';
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
@@ -586,7 +650,7 @@ const DEMO_ADAT = false;
 const DEMO_LITER = [72, 0, 118, 95, 40, 150, 66, 0, 88, 130, 52, 101, 0, 77, 65, 142, 38, 175, 90, 22, 128, 160, 47, 110, 84, 180, 56, 133];  // 28 days, oldest first
 let utolso = 247345, keszlet = 945, kapacitas = 5000, hobbsMap = {}, kep = null;
 
-const fmt = n => n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+const fmt = n => n.toLocaleString(LOC, { maximumFractionDigits: 2 });
 const egesz = n => String(Math.round(Number(n) || 0));   // whole number, no separator (tank + last meter cards)
 const szam = s => parseFloat(String(s).replace(/\s/g, '').replace(',', '.'));
 
@@ -607,14 +671,14 @@ document.addEventListener('change', uresJeloles);
 function enterDataHang() {
   try {
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance('Enter data');
-    u.lang = 'en-US'; u.rate = 0.95;
+    const u = new SpeechSynthesisUtterance(L('Enter data', 'Hiányzó adat'));
+    u.lang = L('en-US', 'hu-HU'); u.rate = 0.95;
     speechSynthesis.speak(u);
   } catch (e) {}
   if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
 }
 function enterData() {
-  uzenet('ENTER DATA', 'err enter');
+  uzenet(L('ENTER DATA', 'HIÁNYZÓ ADAT'), 'err enter');
   enterDataHang();
   const uresek = kotelezoMezok().filter(el => !el.value.trim());
   uresek.forEach(el => { el.classList.remove('razas'); void el.offsetWidth; el.classList.add('razas'); });
@@ -634,7 +698,7 @@ function skala() {
     ln.setAttribute('y1', y); ln.setAttribute('y2', y);
     const t = document.createElementNS(NS, 'text');
     t.setAttribute('x', fo ? 23 : 19); t.setAttribute('y', y);
-    t.textContent = l.toLocaleString('en-GB');
+    t.textContent = l.toLocaleString(LOC);
     g.append(ln, t);
   });
 }
@@ -690,7 +754,7 @@ function grafikon() {
   el('text', { x: cx(napi.length - 1), y: Y0 + 6, 'text-anchor': 'end' }, 'today');
   trend();
   const ossz = napi.reduce((a, n) => a + n.l, 0);
-  $('grafCim').textContent = `Last 14 days: ${fmt(Math.round(ossz))} l`;
+  $('grafCim').textContent = L(`Last 14 days: ${fmt(Math.round(ossz))} l`, `Utolsó 14 nap: ${fmt(Math.round(ossz))} l`);
 }
 // --- Fuel consumption trend over the last 5 days (linear fit of daily litres) ---
 function trend() {
@@ -704,7 +768,7 @@ function trend() {
   const irany = valtozas > 0.15 ? 'up' : valtozas < -0.15 ? 'down' : 'flat';
   const t = $('trend');
   t.dataset.irany = irany;
-  $('trendSzo').textContent = { up: 'Rising', flat: 'Stable', down: 'Falling' }[irany];
+  $('trendSzo').textContent = (HU ? { up: 'Emelkedő', flat: 'Stabil', down: 'Csökkenő' } : { up: 'Rising', flat: 'Stable', down: 'Falling' })[irany];
 }
 
 function grafMutat(i) {
@@ -738,10 +802,11 @@ function utolso5() {
 
 // --- Monthly pie: fuel per aircraft. Swipe (or ‹ ›) between the last 12 months ---
 let havi = {};
-const HONAPOK = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const HONAPOK = HU ? ['január','február','március','április','május','június','július','augusztus','szeptember','október','november','december']
+                   : ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const SZINEK = ['--s1','--s2','--s3','--s4','--s5','--s6','--s7'];  // fixed order; the rest folds into "Other"
 function hoKulcs(d) { return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0'); }
-function hoNev(k) { return HONAPOK[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4); }
+function hoNev(k) { return HU ? k.slice(0, 4) + '. ' + HONAPOK[+k.slice(5, 7) - 1] : HONAPOK[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4); }
 function utolso12() {
   const ma = new Date(), ki = [];
   for (let i = 11; i >= 0; i--) ki.push(hoKulcs(new Date(ma.getFullYear(), ma.getMonth() - i, 1)));
@@ -778,7 +843,7 @@ function tortaRajz(adat) {
   const el = (tag, attr, szoveg, szulo = svg) => { const e = document.createElementNS(NS, tag);
     for (const k in attr) e.setAttribute(k, attr[k]); if (szoveg !== undefined) e.textContent = szoveg; szulo.append(e); return e; };
   const ossz = adat.reduce((a, x) => a + x.l, 0);
-  if (!ossz) { el('text', { class: 'ures', x: CX, y: CY + 10, 'text-anchor': 'middle' }, 'No refuels this month'); return svg; }
+  if (!ossz) { el('text', { class: 'ures', x: CX, y: CY + 10, 'text-anchor': 'middle' }, L('No refuels this month', 'Ebben a hónapban nem volt tankolás')); return svg; }
 
   const defs = el('defs', {});
   defs.innerHTML = `
@@ -838,13 +903,14 @@ function tortaRajz(adat) {
   cimkek.forEach(h => {
     const [ex, ey] = pt(h.am, Math.sin(h.am) > 0 ? MELY * .5 : 0);
     const kx = CX + (RX + 10) * Math.cos(h.am);
-    const szel = (h.x.g.length + fmt(Math.round(h.x.l)).length + 3) * 6.6 + 4;   // estimated label width
+    const gn = h.x.g === 'FOREIGN' ? L('FOREIGN', 'KÜLFÖLDI') : h.x.g;
+    const szel = (gn.length + fmt(Math.round(h.x.l)).length + 3) * 6.6 + 4;   // estimated label width
     let vx = h.jobb ? Math.max(kx, CX + RX * .6) + 12 : Math.min(kx, CX - RX * .6) - 12;
     vx = h.jobb ? Math.min(vx, W - 4 - szel) : Math.max(vx, 4 + szel);            // keep the label inside the card
     el('polyline', { class: 'vezeto', points: `${ex},${ey} ${kx},${h.y} ${vx},${h.y}` });
     el('circle', { class: 'vezeto-pont', cx: ex, cy: ey, r: 1.6 });
     const t = el('text', { class: 'cimke', x: vx + (h.jobb ? 3 : -3), y: h.y + 3.5, 'text-anchor': h.jobb ? 'start' : 'end' });
-    el('tspan', {}, h.x.g + ' ', t);
+    el('tspan', {}, gn + ' ', t);
     el('tspan', { class: 'l' }, fmt(Math.round(h.x.l)) + ' l', t);
     el('text', { class: 'szazalek', x: vx + (h.jobb ? 3 : -3), y: h.y + 14, 'text-anchor': h.jobb ? 'start' : 'end' },
        (h.x.l / ossz * 100).toFixed(1) + '%');
@@ -860,25 +926,25 @@ function torta(irany) {
   // top 7 keep their own colour, the rest is grouped as "Other" (grey) – the list below still shows each one
   const fo = rendezett.slice(0, 7).map((x, i) => ({ ...x, szin: SZINEK[i] }));
   const tobbi = rendezett.slice(7);
-  const szeletek = tobbi.length ? fo.concat([{ g: 'Other', l: tobbi.reduce((a, x) => a + x.l, 0), szin: '--s-egyeb' }]) : fo;
+  const szeletek = tobbi.length ? fo.concat([{ g: L('Other', 'Egyéb'), l: tobbi.reduce((a, x) => a + x.l, 0), szin: '--s-egyeb' }]) : fo;
   const osszL = rendezett.reduce((a, y) => a + y.l, 0);
   const lap = $('tortaLap'); lap.innerHTML = '';
   const svg = tortaRajz(szeletek);
-  svg.setAttribute('aria-label', `Fuel by aircraft, ${hoNev(k)}`);
+  svg.setAttribute('aria-label', L(`Fuel by aircraft, ${hoNev(k)}`, `Üzemanyag gépenként, ${hoNev(k)}`));
   lap.append(svg);
   if (rendezett.length) {
     const ul = document.createElement('ul'); ul.className = 'torta-lista';
     rendezett.forEach((x, i) => {
       const li = document.createElement('li');
       li.innerHTML = `<i style="background:var(${i < 7 ? SZINEK[i] : '--s-egyeb'})"></i><span class="n"><span class="nn"></span><small>${(x.l / osszL * 100).toFixed(1)}%</small></span><span class="v">${fmt(Math.round(x.l))} l</span>`;
-      li.querySelector('.nn').textContent = x.g;
+      li.querySelector('.nn').textContent = x.g === 'FOREIGN' ? L('FOREIGN', 'KÜLFÖLDI') : x.g;
       ul.append(li);
     });
     lap.append(ul);
   }
   lap.classList.remove('le', 'fel'); void lap.offsetWidth; if (irany) lap.classList.add(irany);
   $('tortaHo').textContent = hoNev(k);
-  $('tortaOssz').textContent = `Total: ${fmt(Math.round(osszL))} l`;
+  $('tortaOssz').textContent = L(`Total: ${fmt(Math.round(osszL))} l`, `Összesen: ${fmt(Math.round(osszL))} l`);
   $('tortaElozo').disabled = tortaIdx === 0;
   $('tortaKov').disabled = tortaIdx === hok.length - 1;
 }
@@ -927,8 +993,8 @@ function demoNaplo() {
 function naploRajz() {
   const lista = DEMO_ADAT ? naplo.concat(demoNaplo()) : naplo;
   const box = $('naploLista'); box.innerHTML = '';
-  $('naploDb').textContent = lista.length ? `${lista.length} refuels · last 2 years` : '';
-  if (!lista.length) { box.innerHTML = '<div class="naplo-ures">No refuels recorded yet.</div>'; return; }
+  $('naploDb').textContent = lista.length ? L(`${lista.length} refuels · last 2 years`, `${lista.length} tankolás · utolsó 2 év`) : '';
+  if (!lista.length) { box.innerHTML = '<div class="naplo-ures">' + L('No refuels recorded yet.', 'Még nincs rögzített tankolás.') + '</div>'; return; }
   let ho = '', hoOssz = {};
   lista.forEach(x => { const k = x.d.slice(0, 7); hoOssz[k] = (hoOssz[k] || 0) + x.l; });
   lista.forEach(x => {
@@ -943,14 +1009,14 @@ function naploRajz() {
     const s1 = document.createElement('div'); s1.className = 's1';
     const add = (szulo, cls, txt, tag = 'span') => { const e = document.createElement(tag); e.className = cls; e.textContent = txt; szulo.append(e); return e; };
     add(s1, 'dt', x.d.slice(8, 10) + '/' + x.d.slice(5, 7) + (x.t ? ' ' + x.t : ''));
-    add(s1, 'gg', x.g);
+    add(s1, 'gg', x.g.replace(/\((foreign)\)$/, L('(foreign)', '(külföldi)')));
     add(s1, 'll', fmt(x.l) + ' l');
     const s2 = document.createElement('div'); s2.className = 's2';
     add(s2, '', '👤 ' + x.n);
     if (x.h !== null && x.h !== undefined) add(s2, '', 'Hobbs ' + fmt(x.h));
-    if (x.z) add(s2, '', 'Meter ' + (x.e ? fmt(x.e) + ' → ' : '') + fmt(x.z));
-    if (x.varo) add(s2, '', '⏳ waiting to upload');
-    if (x.f) { const a = add(s2, '', '📷 photo', 'a'); a.href = x.f; a.target = '_blank'; a.rel = 'noopener'; }
+    if (x.z) add(s2, '', L('Meter ', 'Óraállás ') + (x.e ? fmt(x.e) + ' → ' : '') + fmt(x.z));
+    if (x.varo) add(s2, '', L('⏳ waiting to upload', '⏳ feltöltésre vár'));
+    if (x.f) { const a = add(s2, '', L('📷 photo', '📷 fotó'), 'a'); a.href = x.f; a.target = '_blank'; a.rel = 'noopener'; }
     sor.append(s1, s2); box.append(sor);
   });
 }
@@ -960,18 +1026,18 @@ function elorejelzes() {
   if (!$('eloLista')) return;
   const nap = napi.slice(-28), rata = nap.length ? nap.reduce((a, n) => a + n.l, 0) / nap.length : 0;
   $('eloMost').textContent = fmt(Math.round(keszlet)) + ' l';
-  $('eloRata').textContent = rata > 0 ? `avg ${fmt(Math.round(rata))} l/day` : '';
+  $('eloRata').textContent = rata > 0 ? L(`avg ${fmt(Math.round(rata))} l/day`, `átlag ${fmt(Math.round(rata))} l/nap`) : '';
   const ol = $('eloLista'); ol.innerHTML = '';
   const szin = t => t >= 1000 ? '--narancs' : '--piros';   // 1500/1000: getting low · 500/0: critical
   [1500, 1000, 500, 0].forEach(T => {
     const li = document.createElement('li');
     let fo, al, arany;
-    if (keszlet <= T) { fo = 'reached'; al = 'already below'; arany = 1; }
-    else if (rata <= 0) { fo = '–'; al = 'no recent use'; arany = 0; }
+    if (keszlet <= T) { fo = L('reached', 'elérte'); al = L('already below', 'már alatta'); arany = 1; }
+    else if (rata <= 0) { fo = '–'; al = L('no recent use', 'nincs friss fogyás'); arany = 0; }
     else {
       const napok = (keszlet - T) / rata, d = new Date(Date.now() + napok * 86400000);
-      fo = napok < 1 ? '< 1 day' : `${Math.round(napok)} days`;
-      al = '≈ ' + d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      fo = napok < 1 ? L('< 1 day', '< 1 nap') : L(`${Math.round(napok)} days`, `${Math.round(napok)} nap`);
+      al = '≈ ' + d.toLocaleDateString(LOC, { day: '2-digit', month: 'short' });
       arany = Math.max(.04, 1 - Math.min(1, napok / 60));   // bar: fuller = sooner (60-day horizon)
     }
     li.innerHTML = `<i style="background:var(${szin(T)})"></i><span class="szint">${fmt(T)} l</span>
@@ -980,8 +1046,9 @@ function elorejelzes() {
     ol.append(li);
   });
   $('eloMegj').textContent = rata > 0
-    ? `Estimate based on the average daily consumption of the last ${nap.length} days. Deliveries are not included – it updates after every refuel.`
-    : 'Not enough recent refuels to make a forecast.';
+    ? L(`Estimate based on the average daily consumption of the last ${nap.length} days. Deliveries are not included – it updates after every refuel.`,
+        `Becslés az utolsó ${nap.length} nap átlagos napi fogyasztása alapján. A szállításokat nem számolja – minden tankolás után frissül.`)
+    : L('Not enough recent refuels to make a forecast.', 'Nincs elég friss tankolás az előrejelzéshez.');
 }
 
 // --- Tank: inner area y=8..162 (154 units) ---
@@ -992,8 +1059,8 @@ function tartaly(liter) {
 
   let szin, szoveg;
   if (liter >= ZOLD_HATAR)        { szin = 'var(--zold)';    szoveg = 'OK'; }
-  else if (liter >= NARANCS_HATAR){ szin = 'var(--narancs)'; szoveg = 'Getting low'; }
-  else                            { szin = 'var(--piros)';   szoveg = 'Low – order fuel!'; }
+  else if (liter >= NARANCS_HATAR){ szin = 'var(--narancs)'; szoveg = L('Getting low', 'Fogyóban'); }
+  else                            { szin = 'var(--piros)';   szoveg = L('Low – order fuel!', 'Alacsony – rendelj üzemanyagot!'); }
 
   document.querySelectorAll('.hullam').forEach(p => p.style.fill = szin);
   $('keszletSzoveg').style.color = szin;
@@ -1016,7 +1083,7 @@ function szamol() { /* the Fuel pumped card now only shows the saved refuel (see
 function pumpaMutat(liter, lajstrom) {
   const k = $('pumpaKartya'), b = $('mennyiseg');
   k.classList.remove('kesz'); void k.offsetWidth; k.classList.add('kesz');
-  $('pumpaAl').textContent = lajstrom + ' · saved';
+  $('pumpaAl').textContent = lajstrom + L(' · saved', ' · mentve');
   const t0 = performance.now(), ido = 700;
   (function lep(t) {
     const p = Math.min(1, (t - t0) / ido), e = 1 - Math.pow(1 - p, 3);
@@ -1035,7 +1102,7 @@ function aktLajstrom() {
 
 function hobbsInfo() {
   const l = aktLajstrom(), h = hobbsMap[l];
-  $('hobbsMegj').textContent = l && h !== undefined ? `Last recorded Hobbs (${l}): ${fmt(h)}` : '';
+  $('hobbsMegj').textContent = l && h !== undefined ? L(`Last recorded Hobbs (${l}): ${fmt(h)}`, `Utolsó rögzített Hobbs (${l}): ${fmt(h)}`) : '';
 }
 
 function idegenValt(fokusz = true) {
@@ -1062,7 +1129,7 @@ function kepMeretez(file, max = 1600) {
       URL.revokeObjectURL(img.src);
       res(c.toDataURL('image/jpeg', 0.82));
     };
-    img.onerror = () => rej(new Error('Could not open the image.'));
+    img.onerror = () => rej(new Error(L('Could not open the image.', 'Nem sikerült megnyitni a képet.')));
     img.src = URL.createObjectURL(file);
   });
 }
@@ -1089,11 +1156,11 @@ $('szallAblak').addEventListener('click', e => { if (e.target === $('szallAblak'
 $('szJelszo').addEventListener('keydown', e => { if (e.key === 'Enter') $('szBelep').click(); });
 $('szBelep').addEventListener('click', async () => {
   const j = $('szJelszo').value;
-  if (!j) { szUz('Enter the password.'); return; }
-  $('szBelep').disabled = true; szUz('Checking…', true);
+  if (!j) { szUz(L('Enter the password.', 'Írd be a jelszót.')); return; }
+  $('szBelep').disabled = true; szUz(L('Checking…', 'Ellenőrzés…'), true);
   try {
     const d = await szPost({ action: 'jelszo', jelszo: j });
-    if (!d.ok) throw new Error(d.hiba || 'Wrong password.');
+    if (!d.ok) throw new Error(hibaFord(d.hiba) || L('Wrong password.', 'Hibás jelszó.'));
     szJelszo = j; szLepes(2); $('szLiter').focus();
   } catch (e) { szUz(e.message); $('szJelszo').select(); }
   finally { $('szBelep').disabled = false; }
@@ -1108,20 +1175,20 @@ $('szUjKep').addEventListener('click', () => { $('szFoto').value = ''; $('szFoto
 $('szMent').addEventListener('click', async () => {
   const liter = szam($('szLiter').value), atvevo = $('szAtvevo').value.trim();
   ['szLiter', 'szAtvevo'].forEach(id => $(id).classList.toggle('ures', !$(id).value.trim()));
-  if (isNaN(liter) || liter <= 0 || !atvevo) { enterDataHang(); szUz('ENTER DATA'); return; }
-  if (!szKep) { szUz('Take a photo of the delivery note.'); return; }
-  if (keszlet + liter > kapacitas && !confirm(`${fmt(liter)} l would bring the tank to ${fmt(keszlet + liter)} l, above its ${fmt(kapacitas)} l capacity. Save anyway?`)) return;
-  $('szMent').disabled = true; $('szUjKep').disabled = true; szUz('Saving (uploading photo)…', true);
+  if (isNaN(liter) || liter <= 0 || !atvevo) { enterDataHang(); szUz(L('ENTER DATA', 'HIÁNYZÓ ADAT')); return; }
+  if (!szKep) { szUz(L('Take a photo of the delivery note.', 'Fotózd le a szállítólevelet.')); return; }
+  if (keszlet + liter > kapacitas && !confirm(L(`${fmt(liter)} l would bring the tank to ${fmt(keszlet + liter)} l, above its ${fmt(kapacitas)} l capacity. Save anyway?`, `${fmt(liter)} l-rel a tartály ${fmt(keszlet + liter)} l lenne, több mint a ${fmt(kapacitas)} l kapacitás. Mégis mentsem?`))) return;
+  $('szMent').disabled = true; $('szUjKep').disabled = true; szUz(L('Saving (uploading photo)…', 'Mentés (fotó feltöltése)…'), true);
   try {
     const d = await szPost({ action: 'szallitas', jelszo: szJelszo, liter, atvevo, kep: szKep });
-    if (!d.ok) throw new Error(d.hiba || 'Unknown error');
+    if (!d.ok) throw new Error(hibaFord(d.hiba) || L('Unknown error', 'Ismeretlen hiba'));
     $('szoDatum').textContent = d.datum.split('.').reverse().join('/') + ' ' + d.ido;
     $('szoLiter').textContent = fmt(d.liter) + ' l';
     $('szoAtvevo').textContent = d.atvevo;
     $('szoKeszlet').textContent = fmt(d.keszlet) + ' l' + (d.tul ? ' ⚠' : '');
     keszlet = d.keszlet; kapacitas = d.kapacitas || kapacitas; tartaly(keszlet); elorejelzes();
     szLepes(3);
-  } catch (e) { szUz('Error: ' + e.message); }
+  } catch (e) { szUz(L('Error: ', 'Hiba: ') + e.message); }
   finally { $('szMent').disabled = false; $('szUjKep').disabled = false; }
 });
 
@@ -1139,10 +1206,10 @@ let adatIdo = null;   // when the shown data was fetched
 
 function adatAlkalmaz(d) {
   const valasztott = $('lajstrom').value;
-  $('lajstrom').innerHTML = '<option value="">Select…</option>' +
+  $('lajstrom').innerHTML = '<option value="">' + L('Select…', 'Válassz…') + '</option>' +
     rendez(d.lajstromok || []).map(l => {
       const v = String(l).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-      return `<option value="${v}">${l === 'IDEGEN' ? 'FOREIGN' : v}</option>`;
+      return `<option value="${v}">${l === 'IDEGEN' ? L('FOREIGN', 'KÜLFÖLDI') : v}</option>`;
     }).join('');
   $('lajstrom').value = valasztott;
   idegenValt(false);
@@ -1167,11 +1234,11 @@ async function betolt() {
     adatIdo = Date.now();
     tarol(CACHE_KULCS, { ido: adatIdo, adat: d });
     adatAlkalmaz(d);
-    if ($('uzenet').textContent.startsWith('Could not load')) uzenet('');
+    if (/^(Could not load|Nem sikerült betölteni)/.test($('uzenet').textContent)) uzenet('');
   } catch (e) {
     const c = olvas(CACHE_KULCS, null);
     if (c && c.adat) { adatIdo = c.ido; adatAlkalmaz(c.adat); }
-    else { kuldAllapot(); uzenet('No connection and no saved data yet – refuels are stored on this phone and uploaded later.', 'err'); }
+    else { kuldAllapot(); uzenet(L('No connection and no saved data yet – refuels are stored on this phone and uploaded later.', 'Nincs kapcsolat és még nincs mentett adat – a tankolások a telefonon tárolódnak, és később feltöltődnek.'), 'err'); }
   }
   allapot();
 }
@@ -1199,20 +1266,21 @@ async function sorKuldes() {
       else { const h = olvas(HIBAS_KULCS, []); h.push({ ...x, hiba: d.hiba }); tarol(HIBAS_KULCS, h); }
     }
   } finally { kuldesFolyik = false; }
-  if (feltoltve) { uzenet(`✔ ${feltoltve} offline refuel${feltoltve > 1 ? 's' : ''} uploaded`, 'ok'); betolt(); }
+  if (feltoltve) { uzenet(L(`✔ ${feltoltve} offline refuel${feltoltve > 1 ? 's' : ''} uploaded`, `✔ ${feltoltve} offline tankolás feltöltve`), 'ok'); betolt(); }
   allapot();
 }
 function allapot() {
   const sor = sorban(), hibas = olvas(HIBAS_KULCS, []), el = $('halozat');
   const reszek = [];
-  if (!navigator.onLine) reszek.push('Offline – refuels are stored on this phone');
-  if (sor.length) reszek.push(`⏳ ${sor.length} refuel${sor.length > 1 ? 's' : ''} waiting to upload`);
-  if (!navigator.onLine && adatIdo) reszek.push('data from ' + new Date(adatIdo).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
+  if (!navigator.onLine) reszek.push(L('Offline – refuels are stored on this phone', 'Offline – a tankolások a telefonon tárolódnak'));
+  if (sor.length) reszek.push(L(`⏳ ${sor.length} refuel${sor.length > 1 ? 's' : ''} waiting to upload`, `⏳ ${sor.length} tankolás feltöltésre vár`));
+  if (!navigator.onLine && adatIdo) reszek.push(L('data from ', 'adatok: ') + new Date(adatIdo).toLocaleString(LOC, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }));
   el.className = 'halozat' + (hibas.length ? ' hiba' : '');
   el.innerHTML = '';
   if (hibas.length) {
     const t = document.createElement('span');
-    t.textContent = `⚠ ${hibas.length} offline refuel${hibas.length > 1 ? 's' : ''} could not be uploaded (${hibas.map(h => h.g + ' ' + h.zaro + ': ' + h.hiba).join('; ')}). Please tell the fuel manager.`;
+    t.textContent = L(`⚠ ${hibas.length} offline refuel${hibas.length > 1 ? 's' : ''} could not be uploaded (${hibas.map(h => h.g + ' ' + h.zaro + ': ' + h.hiba).join('; ')}). Please tell the fuel manager.`,
+                      `⚠ ${hibas.length} offline tankolást nem sikerült feltölteni (${hibas.map(h => h.g + ' ' + h.zaro + ': ' + hibaFord(h.hiba)).join('; ')}). Szólj a tankolásfelelősnek.`);
     const b = document.createElement('button'); b.type = 'button'; b.textContent = 'OK';
     b.onclick = () => { tarol(HIBAS_KULCS, []); allapot(); };
     el.append(t, b);
@@ -1233,9 +1301,9 @@ let piheno = null;
 function keszMutat(o) {
   $('keszPanel').classList.toggle('figy', !!o.figy);
   $('keszJel').textContent = o.figy ? '!' : '✓';
-  $('keszCim').textContent = o.cim || 'Refuel saved';
+  $('keszCim').textContent = o.cim || L('Refuel saved', 'Tankolás mentve');
   $('keszLiter').textContent = fmt(o.liter) + ' l';
-  $('keszGep').textContent = o.gep + ' · booked to you';
+  $('keszGep').textContent = o.gep + L(' · booked to you', ' · a nevedre');
   $('keszInfo').textContent = o.info || ''; $('keszInfo').hidden = !o.info;
   $('keszFuzet').hidden = !FUZET_EMLEKEZTETO;
   $('keszAblak').hidden = false; $('keszOk').focus();
@@ -1249,16 +1317,16 @@ function kuldAllapot() {
   clearTimeout(piheno);
   if (hatra > 0 && hatra <= PIHENO_MS) {
     b.disabled = true; b.classList.add('pihen');
-    b.textContent = `✓ SAVED – next in ${Math.ceil(hatra / 1000)} s`;
+    b.textContent = L(`✓ SAVED – next in ${Math.ceil(hatra / 1000)} s`, `✓ MENTVE – újra ${Math.ceil(hatra / 1000)} mp múlva`);
     piheno = setTimeout(kuldAllapot, 1000);
   } else {
-    b.disabled = false; b.classList.remove('pihen'); b.textContent = 'PROCEED TO SAVE';
+    b.disabled = false; b.classList.remove('pihen'); b.textContent = L('PROCEED TO SAVE', 'TOVÁBB A MENTÉSHEZ');
   }
 }
 function fuzetJel() {           // blinking red paper-log reminder after the save message
   if (!FUZET_EMLEKEZTETO) return;
   const u = $('uzenet'); u.append(' · ');
-  const j = document.createElement('span'); j.className = 'fuzet-jel'; j.textContent = '📒 Please also write it in the paper log.'; u.append(j);
+  const j = document.createElement('span'); j.className = 'fuzet-jel'; j.textContent = L('📒 Please also write it in the paper log.', '📒 Írd be a papír füzetbe is!'); u.append(j);
 }
 const FUZET_EMLEKEZTETO = true;   // ramp-up: remind to also write it in the paper log (set to false when the logbook is retired)
 // --- Hobbs pop-up (only when the field was left empty) ---
@@ -1292,9 +1360,9 @@ $('urlap').addEventListener('submit', ev => {
   const hobbsUres = !$('hobbs').value.trim();
   const hobbs = hobbsUres ? null : szam($('hobbs').value);
   const nev = $('nev').value.trim();
-  if (!hobbsUres && (isNaN(hobbs) || hobbs < 0)) return uzenet('Invalid Hobbs value.', 'err');
-  if (isNaN(zaro)) return uzenet('Invalid meter reading.', 'err');
-  if (zaro <= utolso) return uzenet('Closing meter reading must be greater than the last one.', 'err');
+  if (!hobbsUres && (isNaN(hobbs) || hobbs < 0)) return uzenet(L('Invalid Hobbs value.', 'Érvénytelen Hobbs-érték.'), 'err');
+  if (isNaN(zaro)) return uzenet(L('Invalid meter reading.', 'Érvénytelen óraállás.'), 'err');
+  if (zaro <= utolso) return uzenet(L('Closing meter reading must be greater than the last one.', 'A záró óraállásnak nagyobbnak kell lennie az utolsónál.'), 'err');
   if (hobbsUres && !hobbsKihagyva) return hobbsKerdes();     // Hobbs is optional – ask once
   hobbsKihagyva = false;
   uzenet('');
@@ -1302,16 +1370,16 @@ $('urlap').addEventListener('submit', ev => {
   const m = Math.round((zaro - utolso) * 100) / 100;
   const figy = [];
   const elozoHobbs = hobbsMap[lajstrom];
-  if (hobbs !== null && elozoHobbs !== undefined && hobbs < elozoHobbs) figy.push(`Hobbs is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}).`);
-  if (m > keszlet) figy.push(`Fuel pumped is more than the current tank quantity (${fmt(keszlet)} l).`);
+  if (hobbs !== null && elozoHobbs !== undefined && hobbs < elozoHobbs) figy.push(L(`Hobbs is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}).`, `A Hobbs kisebb, mint a(z) ${lajstrom} utolsó rögzített értéke (${fmt(elozoHobbs)}).`));
+  if (m > keszlet) figy.push(L(`Fuel pumped is more than the current tank quantity (${fmt(keszlet)} l).`, `A tankolt mennyiség több, mint a tartály készlete (${fmt(keszlet)} l).`));
 
   fuggo = { valasztott, idegen, lajstrom, zaro, hobbs, nev, m };
   const most = new Date();
   const sorok = [
-    ['Date', most.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0')],
-    ['Aircraft', lajstrom], ['Hobbs', hobbs === null ? '–' : fmt(hobbs)], ['Name', nev], null,
-    ['Last meter reading', fmt(utolso)], ['Closing meter reading', fmt(zaro)], null,
-    ['Fuel pumped', fmt(m) + ' l', 'kiemel'], ['Tank after refuel', fmt(Math.max(0, Math.round(keszlet - m))) + ' l']];
+    [L('Date', 'Dátum'), most.toLocaleDateString(LOC, { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0')],
+    [L('Aircraft', 'Gép'), lajstrom], ['Hobbs', hobbs === null ? '–' : fmt(hobbs)], [L('Name', 'Név'), nev], null,
+    [L('Last meter reading', 'Utolsó óraállás'), fmt(utolso)], [L('Closing meter reading', 'Záró óraállás'), fmt(zaro)], null,
+    [L('Fuel pumped', 'Tankolt mennyiség'), fmt(m) + ' l', 'kiemel'], [L('Tank after refuel', 'Készlet utána'), fmt(Math.max(0, Math.round(keszlet - m))) + ' l']];
   const dl = $('oszLista'); dl.innerHTML = '';
   sorok.forEach(x => {
     if (!x) { dl.append(document.createElement('hr')); return; }
@@ -1320,14 +1388,15 @@ $('urlap').addEventListener('submit', ev => {
     dl.append(dt, dd);
   });
   $('oszFigy').textContent = figy.length ? '⚠ ' + figy.join(' ') : '';
+  $('kkCim').innerHTML = L('Does the pump\'s counter dial show <b id="kkLiter"></b>?', 'A kút tekerője is <b id="kkLiter"></b>-t mutat?');
   $('kkLiter').textContent = fmt(m) + ' l';
   $('kkBevitel').hidden = true; $('kkNem').hidden = false; $('kkErtek').value = ''; $('kijelzoKerdes').classList.remove('nem');
-  $('oszMent').textContent = `✓ Yes, ${fmt(m)} l – SAVE`;
+  $('oszMent').textContent = L(`✓ Yes, ${fmt(m)} l – SAVE`, `✓ Igen, ${fmt(m)} l – MENTÉS`);
   $('oszAblak').hidden = false;
 });
 function oszZar() { $('oszAblak').hidden = true; }
 $('kkNem').addEventListener('click', () => {
-  $('kkBevitel').hidden = false; $('kkNem').hidden = true; $('oszMent').textContent = 'SAVE';
+  $('kkBevitel').hidden = false; $('kkNem').hidden = true; $('oszMent').textContent = L('SAVE', 'MENTÉS');
   $('kijelzoKerdes').classList.add('nem');
   $('kkErtek').focus();
 });
@@ -1357,11 +1426,11 @@ $('oszMent').addEventListener('click', async () => {
   let kijelzo = x.m;                                   // "Yes" = the pump display matches the meter difference
   if (!$('kkBevitel').hidden) {
     kijelzo = szam($('kkErtek').value);
-    if (isNaN(kijelzo) || kijelzo < 0) { $('kkErtek').classList.add('ures'); $('oszFigy').textContent = 'Enter what the pump display shows.'; enterDataHang(); return; }
+    if (isNaN(kijelzo) || kijelzo < 0) { $('kkErtek').classList.add('ures'); $('oszFigy').textContent = L('Enter what the counter dial shows.', 'Írd be, mit mutat a tekerő.'); enterDataHang(); return; }
   }
   const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs === null ? '' : x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
   try { localStorage.setItem('nev', x.nev); } catch (e) {}
-  $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
+  $('oszMent').disabled = true; $('oszMent').textContent = L('Saving…', 'Mentés…');
   $('kuld').disabled = true;
   const offlineMentes = () => {
     // no connection: keep it on the phone, upload later (the server places it correctly even if others saved meanwhile)
@@ -1374,8 +1443,9 @@ $('oszMent').addEventListener('click', async () => {
     const sajat = (kijelzo > 0 && kijelzo < x.m - 0.05) ? kijelzo : x.m;
     helyiFrissites(x, sajat, true);
     uzenet('');
-    keszMutat({ cim: 'Saved on this phone', liter: sajat, gep: x.lajstrom,
-                info: (sajat < x.m ? `${fmt(x.m - sajat)} l will be recorded as UNRECORDED (an earlier refuel nobody logged). ` : '') + 'No internet now – it uploads automatically when you are back online.' });
+    keszMutat({ cim: L('Saved on this phone', 'Mentve a telefonon'), liter: sajat, gep: x.lajstrom,
+                info: (sajat < x.m ? L(`${fmt(x.m - sajat)} l will be recorded as UNRECORDED (an earlier refuel nobody logged). `, `${fmt(x.m - sajat)} l UNRECORDED-ként kerül rögzítésre (egy korábbi, nem rögzített tankolás). `) : '') +
+                L('No internet now – it uploads automatically when you are back online.', 'Most nincs internet – amint lesz, magától feltöltődik.') });
     allapot(); elorejelzes();
   };
   try {
@@ -1386,7 +1456,7 @@ $('oszMent').addEventListener('click', async () => {
       d = await r.json();
     } catch (e) { return offlineMentes(); }                     // network failed → outbox
     if (!d.ok && d.ujra) return offlineMentes();                 // server busy → outbox
-    if (!d.ok) throw new Error(d.hiba || 'Unknown error');
+    if (!d.ok) throw new Error(hibaFord(d.hiba) || L('Unknown error', 'Ismeretlen hiba'));
     oszZar(); fuggo = null;
     keszlet = d.keszlet; tartaly(keszlet);
     helyiFrissites(x, d.mennyiseg);
@@ -1395,18 +1465,18 @@ $('oszMent').addEventListener('click', async () => {
     const gyanus = kijelzo > 0 && kijelzo < x.m - 0.05;                          // the user said the display shows less than the meter difference
     uzenet('');
     if (d.hiany > 0) {
-      keszMutat({ liter: d.mennyiseg, gep: x.lajstrom, info: `${fmt(d.hiany)} l was recorded separately as UNRECORDED (an earlier refuel nobody logged). The fuel manager has been notified.` });
+      keszMutat({ liter: d.mennyiseg, gep: x.lajstrom, info: L(`${fmt(d.hiany)} l was recorded separately as UNRECORDED (an earlier refuel nobody logged). The fuel manager has been notified.`, `${fmt(d.hiany)} l külön sorba került UNRECORDED-ként (egy korábbi, nem rögzített tankolás). A tankolásfelelős értesítést kapott.`) });
     } else if (gyanus) {                                       // the user entered less, but the server did not split it
-      keszMutat({ figy: true, liter: d.mennyiseg, gep: x.lajstrom, info: `⚠ The server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).` });
+      keszMutat({ figy: true, liter: d.mennyiseg, gep: x.lajstrom, info: L(`⚠ The server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).`, `⚠ A szerver nem tudta szétbontani a te ${fmt(kijelzo)} l-edre + ${fmt(x.m - kijelzo)} l UNRECORDED-re. Szólj a tankolásfelelősnek (frissíteni kell a szerver scriptet).`) });
     } else {
-      keszMutat({ figy: !!d.figyelmeztetes, liter: d.mennyiseg, gep: x.lajstrom, info: d.figyelmeztetes ? '⚠ ' + d.figyelmeztetes : '' });
+      keszMutat({ figy: !!d.figyelmeztetes, liter: d.mennyiseg, gep: x.lajstrom, info: d.figyelmeztetes ? '⚠ ' + hibaFord(d.figyelmeztetes) : '' });
     }
     elorejelzes();
   } catch (e) {
-    $('oszFigy').textContent = 'Error: ' + e.message;
-    uzenet('Error: ' + e.message, 'err');
+    $('oszFigy').textContent = L('Error: ', 'Hiba: ') + e.message;
+    uzenet(L('Error: ', 'Hiba: ') + e.message, 'err');
   } finally {
-    $('oszMent').disabled = false; if ($('oszMent').textContent === 'Saving…') $('oszMent').textContent = 'SAVE';
+    $('oszMent').disabled = false; if (/^(Saving|Mentés)…$/.test($('oszMent').textContent)) $('oszMent').textContent = L('SAVE', 'MENTÉS');
     kuldAllapot();
   }
 });
@@ -1415,8 +1485,8 @@ $('oszMent').addEventListener('click', async () => {
 function datumKartya() {
   const d = new Date();
   $('dkNap').textContent = String(d.getDate()).padStart(2, '0');
-  $('dkHo').textContent = d.toLocaleDateString('en-GB', { month: 'short' }) + ' ' + d.getFullYear();
-  $('dkHet').textContent = d.toLocaleDateString('en-GB', { weekday: 'long' });
+  $('dkHo').textContent = d.toLocaleDateString(LOC, { month: 'short' }).replace('.', '') + ' ' + d.getFullYear();
+  $('dkHet').textContent = d.toLocaleDateString(LOC, { weekday: 'long' });
   $('dkOra').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' LT';
 }
 datumKartya(); setInterval(datumKartya, 15000);

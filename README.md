@@ -28,7 +28,7 @@
 - A kötelező mezők (Aircraft Registration, Hobbs, Name, Closing meter reading, idegen gépnél a lajstrom) pirosan villognak, amíg üresek. Ha üresen akarják menteni, a telefon bemondja: „Enter data”, és pirosan kiírja: ENTER DATA.
 - Idegen gépnél a táblázatba `D-EABC (foreign)` formában kerül a lajstrom.
 - **Dátum**: automatikusan a mai nap.
-- **Hobbs**: kötelező. Az app kiírja a kiválasztott gép utolsó rögzített Hobbs-értékét,
+- **Hobbs**: nem kötelező. Ha üresen marad, mentés előtt az app egy ablakban rákérdez (ott beírható, vagy „No, skip”). Az app kiírja a kiválasztott gép utolsó rögzített Hobbs-értékét,
   és rákérdez, ha kisebbet írsz be.
 - **Záró óraállás**: beírható kézzel, vagy a 📷 gombbal lefotózható. A fotóról a Google
   szövegfelismerője olvassa le az értéket, és beírja a mezőbe. **Mindig ellenőrizd!**

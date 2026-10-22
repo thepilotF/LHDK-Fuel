@@ -67,6 +67,12 @@
   .kk-cim { font-size:1rem; line-height:1.35; }
   .kk-cim b { color:var(--zold); }
   .kk-cim { font-weight:700; }
+  .opcio { font-weight:400; color:var(--muted); font-size:.85em; }
+  .hobbs-kerdes { font-size:1.05rem; line-height:1.4; margin:6px 0 4px; }
+  .hobbs-sor { display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .hobbs-sor input { flex:1; font-size:1.3rem; font-weight:700; }
+  #hkTovabb { background:var(--tartaly-keret); transition:background .2s; }
+  #hkTovabb.kesz { background:var(--zold); }
   .kk-igen { margin-top:12px; }
   .kk-nem { width:100%; margin-top:10px; height:52px; border-radius:10px; border:2px solid var(--narancs); background:color-mix(in srgb, var(--narancs) 10%, var(--card));
             color:var(--text); font:inherit; font-size:1.02rem; font-weight:700; cursor:pointer; }
@@ -320,7 +326,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.2</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -406,8 +412,8 @@
           <input id="idegen" type="text" placeholder="e.g. D-EABC" autocapitalize="characters" maxlength="12">
         </div>
 
-        <label for="hobbs">Hobbs</label>
-        <input id="hobbs" class="kotelezo" type="text" inputmode="decimal" placeholder="e.g. 1234.5">
+        <label for="hobbs">Hobbs <span class="opcio">(optional)</span></label>
+        <input id="hobbs" type="text" inputmode="decimal" placeholder="e.g. 1234.5">
         <div class="megj" id="hobbsMegj"></div>
 
         <label for="zaro">Closing meter reading</label>
@@ -492,6 +498,20 @@
       <button type="button" class="kk-nem" id="kkNem">✗ No, it shows a different amount</button>
     </div>
     <button type="button" class="osz-edit" id="oszVissza">✎ Change the entered data</button>
+  </div>
+</div>
+
+<!-- Hobbs left empty → ask once -->
+<div class="szall-hatter" id="hobbsAblak" hidden>
+  <div class="szall-panel" role="dialog" aria-modal="true" aria-labelledby="hkCim">
+    <div class="szall-fej"><b id="hkCim">Hobbs is empty</b><button type="button" class="szall-x" id="hkBezar" aria-label="Back">✕</button></div>
+    <div class="hobbs-kerdes">Would you like to enter the Hobbs reading? You can type it here.</div>
+    <div class="hobbs-sor"><input id="hkErtek" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 1234.5" aria-label="Hobbs"></div>
+    <div class="osz-figy" id="hkFigy"></div>
+    <div class="szall-ket">
+      <button type="button" class="szall-gomb masodlagos" id="hkNem">No, skip</button>
+      <button type="button" class="szall-gomb" id="hkTovabb" disabled>Continue</button>
+    </div>
   </div>
 </div>
 
@@ -1208,7 +1228,7 @@ setInterval(() => { if (sorban().length) sorKuldes(); }, 60000);
 // --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
 let fuggo = null;
 // --- "Refuel saved" pop-up + 1-minute pause of PROCEED TO SAVE on this phone ---
-const PIHENO_KULCS = 'lhdk_mentve', PIHENO_MS = 60000;
+const PIHENO_KULCS = 'lhdk_mentve', PIHENO_MS = 30000;
 let piheno = null;
 function keszMutat(o) {
   $('keszPanel').classList.toggle('figy', !!o.figy);
@@ -1241,6 +1261,25 @@ function fuzetJel() {           // blinking red paper-log reminder after the sav
   const j = document.createElement('span'); j.className = 'fuzet-jel'; j.textContent = '📒 Please also write it in the paper log.'; u.append(j);
 }
 const FUZET_EMLEKEZTETO = true;   // ramp-up: remind to also write it in the paper log (set to false when the logbook is retired)
+// --- Hobbs pop-up (only when the field was left empty) ---
+let hobbsKihagyva = false;
+function hkJo() { const v = $('hkErtek').value.trim(), h = szam(v); return v !== '' && !isNaN(h) && h >= 0 && h <= 100000; }
+function hobbsKerdes() {
+  $('hkErtek').value = ''; $('hkFigy').textContent = '';
+  $('hkTovabb').disabled = true; $('hkTovabb').classList.remove('kesz');
+  $('hobbsAblak').hidden = false;
+}
+$('hkErtek').addEventListener('input', () => { const j = hkJo(); $('hkTovabb').disabled = !j; $('hkTovabb').classList.toggle('kesz', j); $('hkFigy').textContent = ''; });
+$('hkErtek').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (hkJo()) $('hkTovabb').click(); } });
+$('hkTovabb').addEventListener('click', () => {
+  if (!hkJo()) return;
+  $('hobbs').value = $('hkErtek').value.trim(); hobbsInfo();
+  $('hobbsAblak').hidden = true; $('urlap').requestSubmit();
+});
+$('hkNem').addEventListener('click', () => { $('hobbsAblak').hidden = true; hobbsKihagyva = true; $('urlap').requestSubmit(); });
+$('hkBezar').addEventListener('click', () => { $('hobbsAblak').hidden = true; });
+$('hobbsAblak').addEventListener('click', e => { if (e.target === $('hobbsAblak')) $('hobbsAblak').hidden = true; });
+
 $('urlap').addEventListener('submit', ev => {
   ev.preventDefault();
   uresJeloles();
@@ -1250,24 +1289,27 @@ $('urlap').addEventListener('submit', ev => {
   const idegen = $('idegen').value.trim().toUpperCase();
   const lajstrom = aktLajstrom();
   const zaro = szam($('zaro').value);
-  const hobbs = szam($('hobbs').value);
+  const hobbsUres = !$('hobbs').value.trim();
+  const hobbs = hobbsUres ? null : szam($('hobbs').value);
   const nev = $('nev').value.trim();
-  if (isNaN(hobbs) || hobbs < 0) return uzenet('Invalid Hobbs value.', 'err');
+  if (!hobbsUres && (isNaN(hobbs) || hobbs < 0)) return uzenet('Invalid Hobbs value.', 'err');
   if (isNaN(zaro)) return uzenet('Invalid meter reading.', 'err');
   if (zaro <= utolso) return uzenet('Closing meter reading must be greater than the last one.', 'err');
+  if (hobbsUres && !hobbsKihagyva) return hobbsKerdes();     // Hobbs is optional – ask once
+  hobbsKihagyva = false;
   uzenet('');
 
   const m = Math.round((zaro - utolso) * 100) / 100;
   const figy = [];
   const elozoHobbs = hobbsMap[lajstrom];
-  if (elozoHobbs !== undefined && hobbs < elozoHobbs) figy.push(`Hobbs is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}).`);
+  if (hobbs !== null && elozoHobbs !== undefined && hobbs < elozoHobbs) figy.push(`Hobbs is lower than the last recorded value for ${lajstrom} (${fmt(elozoHobbs)}).`);
   if (m > keszlet) figy.push(`Fuel pumped is more than the current tank quantity (${fmt(keszlet)} l).`);
 
   fuggo = { valasztott, idegen, lajstrom, zaro, hobbs, nev, m };
   const most = new Date();
   const sorok = [
     ['Date', most.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0')],
-    ['Aircraft', lajstrom], ['Hobbs', fmt(hobbs)], ['Name', nev], null,
+    ['Aircraft', lajstrom], ['Hobbs', hobbs === null ? '–' : fmt(hobbs)], ['Name', nev], null,
     ['Last meter reading', fmt(utolso)], ['Closing meter reading', fmt(zaro)], null,
     ['Fuel pumped', fmt(m) + ' l', 'kiemel'], ['Tank after refuel', fmt(Math.max(0, Math.round(keszlet - m))) + ' l']];
   const dl = $('oszLista'); dl.innerHTML = '';
@@ -1297,7 +1339,7 @@ function helyiFrissites(x, liter, varo) {
   // update the screen right away (online or offline)
   pumpaMutat(liter, x.lajstrom);
   utolso = Math.max(utolso, x.zaro); $('utolso').textContent = egesz(utolso);
-  hobbsMap[x.lajstrom] = x.hobbs;
+  if (x.hobbs !== null) hobbsMap[x.lajstrom] = x.hobbs;
   if (napi.length) { napi[napi.length - 1].l += liter; grafikon(); }
   const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
   naplo.unshift({ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: x.lajstrom, n: x.nev,
@@ -1317,7 +1359,7 @@ $('oszMent').addEventListener('click', async () => {
     kijelzo = szam($('kkErtek').value);
     if (isNaN(kijelzo) || kijelzo < 0) { $('kkErtek').classList.add('ures'); $('oszFigy').textContent = 'Enter what the pump display shows.'; enterDataHang(); return; }
   }
-  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
+  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs === null ? '' : x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
   try { localStorage.setItem('nev', x.nev); } catch (e) {}
   $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
   $('kuld').disabled = true;

@@ -320,7 +320,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.1</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1329,7 +1329,7 @@ $('oszMent').addEventListener('click', async () => {
     tarol(SOR_KULCS, sor);
     oszZar(); fuggo = null;
     keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
-    const sajat = (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m;
+    const sajat = (kijelzo > 0 && kijelzo < x.m - 0.05) ? kijelzo : x.m;
     helyiFrissites(x, sajat, true);
     uzenet('');
     keszMutat({ cim: 'Saved on this phone', liter: sajat, gep: x.lajstrom,
@@ -1350,11 +1350,11 @@ $('oszMent').addEventListener('click', async () => {
     helyiFrissites(x, d.mennyiseg);
     if (d.hiany) betolt();
     utolso = d.utolso; $('utolso').textContent = egesz(utolso);
-    const gyanus = kijelzo < x.m - 1;                          // the user said the display shows less than the meter difference
+    const gyanus = kijelzo > 0 && kijelzo < x.m - 0.05;                          // the user said the display shows less than the meter difference
     uzenet('');
     if (d.hiany > 0) {
       keszMutat({ liter: d.mennyiseg, gep: x.lajstrom, info: `${fmt(d.hiany)} l was recorded separately as UNRECORDED (an earlier refuel nobody logged). The fuel manager has been notified.` });
-    } else if (gyanus && d.hiany === undefined) {
+    } else if (gyanus) {                                       // the user entered less, but the server did not split it
       keszMutat({ figy: true, liter: d.mennyiseg, gep: x.lajstrom, info: `⚠ The server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).` });
     } else {
       keszMutat({ figy: !!d.figyelmeztetes, liter: d.mennyiseg, gep: x.lajstrom, info: d.figyelmeztetes ? '⚠ ' + d.figyelmeztetes : '' });

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LHDK Avgas Refueling</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#15181b">
@@ -28,7 +28,9 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
   label { display:block; font-weight:600; margin:14px 0 6px; font-size:.95rem; }
   label:first-child { margin-top:0; }
-  input, select { width:100%; font-size:1.1rem; padding:12px; border:1.5px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
+  /* no zooming: no double-tap zoom, and inputs ≥16px so iPhone does not zoom in when a field is tapped */
+  html { touch-action:manipulation; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  input, select { width:100%; font-size:max(16px, 1.1rem); padding:12px; border:1.5px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
   input[readonly] { color:var(--muted); }
   input.olvasott { border-color:var(--narancs); box-shadow:0 0 0 2px color-mix(in srgb, var(--narancs) 30%, transparent); }
   .info { display:flex; justify-content:space-between; gap:8px; padding:10px 12px; margin-top:14px; border-radius:8px; background:var(--bg); font-size:1rem; }
@@ -124,7 +126,7 @@
   #idegenMezo label { margin-top:14px; }
   .oszlop:first-child { padding-right:14px; }
   .oszlop + .oszlop { padding-left:14px; border-left:1px solid var(--line); }
-  .ket-oszlop input, .ket-oszlop select { font-size:1rem; padding:10px; }
+  .ket-oszlop input, .ket-oszlop select { font-size:max(16px, 1rem); padding:10px; }
   .ket-oszlop .info { flex-direction:column; gap:2px; }
   .ket-oszlop .info span { font-size:.85rem; color:var(--muted); }
   .ket-oszlop .info b { text-align:left; }
@@ -335,7 +337,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.2</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.3</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1492,6 +1494,11 @@ $('oszMent').addEventListener('click', async () => {
     kuldAllapot();
   }
 });
+
+// --- No zooming (iPhone ignores user-scalable=no, so pinch and double-tap are blocked here) ---
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+// double-tap zoom is switched off by touch-action: manipulation (CSS)
 
 // --- Start ---
 function datumKartya() {

@@ -66,7 +66,24 @@
   .kijelzo-kerdes { margin:12px 0 0; padding:12px 14px; border-radius:12px; background:var(--bg); }
   .kk-cim { font-size:1rem; line-height:1.35; }
   .kk-cim b { color:var(--zold); }
-  .kk-nem { margin-top:8px; padding:0; border:0; background:none; color:var(--accent); font:inherit; font-size:.9rem; font-weight:600; text-decoration:underline; cursor:pointer; }
+  .kk-cim { font-weight:700; }
+  .kk-igen { margin-top:12px; }
+  .kk-nem { width:100%; margin-top:10px; height:52px; border-radius:10px; border:2px solid var(--narancs); background:color-mix(in srgb, var(--narancs) 10%, var(--card));
+            color:var(--text); font:inherit; font-size:1.02rem; font-weight:700; cursor:pointer; }
+  .kk-nem[hidden] { display:none; }
+  .kijelzo-kerdes.nem { background:color-mix(in srgb, var(--narancs) 12%, var(--card)); border:2px solid var(--narancs); }
+  .kk-magyaraz { margin-top:6px; font-size:.88rem; color:var(--muted); line-height:1.35; }
+  .osz-edit { display:block; margin:14px auto 0; padding:6px 10px; border:0; background:none; color:var(--muted); font:inherit; font-size:.92rem; cursor:pointer; }
+  .kesz-panel { text-align:center; }
+  .kesz-panel .kesz-cim { font-size:1.35rem; font-weight:800; margin-top:2px; }
+  .kesz-liter { font-size:3rem; font-weight:900; line-height:1.05; color:var(--zold); margin:8px 0 2px; font-variant-numeric:tabular-nums; }
+  .kesz-gep { color:var(--muted); font-weight:600; }
+  .kesz-info { margin-top:12px; padding:10px 12px; border-radius:10px; font-size:.95rem; line-height:1.4; text-align:left; background:color-mix(in srgb, var(--narancs) 12%, var(--card)); }
+  .kesz-info[hidden], .kesz-fuzet[hidden] { display:none; }
+  .kesz-panel.figy .szall-kesz { background:var(--narancs); }
+  .kesz-panel.figy .kesz-liter { color:var(--narancs); }
+  .kesz-fuzet { margin-top:12px; font-weight:800; }
+  #kuld.pihen { background:var(--tartaly-keret); box-shadow:none; opacity:1; letter-spacing:.04em; font-size:1.1rem; }
   .kk-bevitel[hidden] { display:none; }
   .kk-bevitel label { margin:10px 0 6px; font-size:.9rem; }
   .kk-sor { display:flex; align-items:center; gap:8px; }
@@ -303,7 +320,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.7.3</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.8.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -464,18 +481,30 @@
     <div class="szall-fej"><b id="oszCim">Check before saving</b><button type="button" class="szall-x" id="oszBezar" aria-label="Back to edit">✕</button></div>
     <dl class="osz-lista" id="oszLista"></dl>
     <div class="kijelzo-kerdes" id="kijelzoKerdes">
-      <div class="kk-cim">Does the pump's reset display show <b id="kkLiter">–</b>?</div>
-      <button type="button" class="kk-nem" id="kkNem">No, it shows a different amount</button>
+      <div class="kk-cim">Does the pump's counter dial show <b id="kkLiter">–</b>?</div>
       <div class="kk-bevitel" id="kkBevitel" hidden>
-        <label for="kkErtek">Pump display shows</label>
+        <div class="kk-magyaraz">Someone didn't log an earlier refuel. Enter what the counter dial shows – only that amount is booked to you, the rest is recorded as UNRECORDED.</div>
+        <label for="kkErtek">Counter dial shows</label>
         <div class="kk-sor"><input id="kkErtek" type="text" inputmode="decimal" autocomplete="off"><span>l</span></div>
       </div>
+      <div class="osz-figy" id="oszFigy"></div>
+      <button type="button" class="szall-gomb kk-igen" id="oszMent">SAVE</button>
+      <button type="button" class="kk-nem" id="kkNem">✗ No, it shows a different amount</button>
     </div>
-    <div class="osz-figy" id="oszFigy"></div>
-    <div class="szall-ket">
-      <button type="button" class="szall-gomb masodlagos" id="oszVissza">Edit</button>
-      <button type="button" class="szall-gomb" id="oszMent">SAVE</button>
-    </div>
+    <button type="button" class="osz-edit" id="oszVissza">✎ Change the entered data</button>
+  </div>
+</div>
+
+<!-- Refuel saved -->
+<div class="szall-hatter" id="keszAblak" hidden>
+  <div class="szall-panel kesz-panel" id="keszPanel" role="alertdialog" aria-modal="true" aria-labelledby="keszCim">
+    <div class="szall-kesz" id="keszJel">✓</div>
+    <div class="kesz-cim" id="keszCim">Refuel saved</div>
+    <div class="kesz-liter" id="keszLiter">–</div>
+    <div class="kesz-gep" id="keszGep"></div>
+    <div class="kesz-info" id="keszInfo" hidden></div>
+    <div class="kesz-fuzet" id="keszFuzet"><span class="fuzet-jel">📒 Please also write it in the paper log.</span></div>
+    <button type="button" class="szall-gomb" id="keszOk">OK</button>
   </div>
 </div>
 
@@ -1107,7 +1136,7 @@ function adatAlkalmaz(d) {
   $('utolso').textContent = egesz(utolso);
   tartaly(keszlet);
   hobbsInfo(); elorejelzes();
-  $('kuld').disabled = false;
+  kuldAllapot();
 }
 
 async function betolt() {
@@ -1122,7 +1151,7 @@ async function betolt() {
   } catch (e) {
     const c = olvas(CACHE_KULCS, null);
     if (c && c.adat) { adatIdo = c.ido; adatAlkalmaz(c.adat); }
-    else { $('kuld').disabled = false; uzenet('No connection and no saved data yet – refuels are stored on this phone and uploaded later.', 'err'); }
+    else { kuldAllapot(); uzenet('No connection and no saved data yet – refuels are stored on this phone and uploaded later.', 'err'); }
   }
   allapot();
 }
@@ -1178,6 +1207,34 @@ setInterval(() => { if (sorban().length) sorKuldes(); }, 60000);
 // --- Save ---
 // --- Proceed to save: validate, then show a summary; the summary's SAVE does the real save ---
 let fuggo = null;
+// --- "Refuel saved" pop-up + 1-minute pause of PROCEED TO SAVE on this phone ---
+const PIHENO_KULCS = 'lhdk_mentve', PIHENO_MS = 60000;
+let piheno = null;
+function keszMutat(o) {
+  $('keszPanel').classList.toggle('figy', !!o.figy);
+  $('keszJel').textContent = o.figy ? '!' : '✓';
+  $('keszCim').textContent = o.cim || 'Refuel saved';
+  $('keszLiter').textContent = fmt(o.liter) + ' l';
+  $('keszGep').textContent = o.gep + ' · booked to you';
+  $('keszInfo').textContent = o.info || ''; $('keszInfo').hidden = !o.info;
+  $('keszFuzet').hidden = !FUZET_EMLEKEZTETO;
+  $('keszAblak').hidden = false; $('keszOk').focus();
+  try { localStorage.setItem(PIHENO_KULCS, String(Date.now())); } catch (e) {}
+  kuldAllapot();
+}
+$('keszOk').addEventListener('click', () => { $('keszAblak').hidden = true; });
+function kuldAllapot() {
+  let t = 0; try { t = Number(localStorage.getItem(PIHENO_KULCS)) || 0; } catch (e) {}
+  const hatra = t + PIHENO_MS - Date.now(), b = $('kuld');
+  clearTimeout(piheno);
+  if (hatra > 0 && hatra <= PIHENO_MS) {
+    b.disabled = true; b.classList.add('pihen');
+    b.textContent = `✓ SAVED – next in ${Math.ceil(hatra / 1000)} s`;
+    piheno = setTimeout(kuldAllapot, 1000);
+  } else {
+    b.disabled = false; b.classList.remove('pihen'); b.textContent = 'PROCEED TO SAVE';
+  }
+}
 function fuzetJel() {           // blinking red paper-log reminder after the save message
   if (!FUZET_EMLEKEZTETO) return;
   const u = $('uzenet'); u.append(' · ');
@@ -1222,13 +1279,14 @@ $('urlap').addEventListener('submit', ev => {
   });
   $('oszFigy').textContent = figy.length ? '⚠ ' + figy.join(' ') : '';
   $('kkLiter').textContent = fmt(m) + ' l';
-  $('kkBevitel').hidden = true; $('kkNem').hidden = false; $('kkErtek').value = '';
-  $('oszMent').textContent = `Yes, ${fmt(m)} l – SAVE`;
+  $('kkBevitel').hidden = true; $('kkNem').hidden = false; $('kkErtek').value = ''; $('kijelzoKerdes').classList.remove('nem');
+  $('oszMent').textContent = `✓ Yes, ${fmt(m)} l – SAVE`;
   $('oszAblak').hidden = false;
 });
 function oszZar() { $('oszAblak').hidden = true; }
 $('kkNem').addEventListener('click', () => {
   $('kkBevitel').hidden = false; $('kkNem').hidden = true; $('oszMent').textContent = 'SAVE';
+  $('kijelzoKerdes').classList.add('nem');
   $('kkErtek').focus();
 });
 $('oszBezar').addEventListener('click', oszZar);
@@ -1262,7 +1320,7 @@ $('oszMent').addEventListener('click', async () => {
   const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
   try { localStorage.setItem('nev', x.nev); } catch (e) {}
   $('oszMent').disabled = true; $('oszMent').textContent = 'Saving…';
-  $('kuld').disabled = true; uzenet('Saving…');
+  $('kuld').disabled = true;
   const offlineMentes = () => {
     // no connection: keep it on the phone, upload later (the server places it correctly even if others saved meanwhile)
     const sor = sorban();
@@ -1273,8 +1331,9 @@ $('oszMent').addEventListener('click', async () => {
     keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
     const sajat = (kijelzo > 0 && kijelzo < x.m - 1) ? kijelzo : x.m;
     helyiFrissites(x, sajat, true);
-    uzenet(`✔ Saved on this phone: ${fmt(sajat)} l (${x.lajstrom})` + (sajat < x.m ? ` booked to you, the other ${fmt(x.m - sajat)} l will be recorded as UNRECORDED` : '') +
-           ' – it will upload automatically when online', 'ok'); fuzetJel();
+    uzenet('');
+    keszMutat({ cim: 'Saved on this phone', liter: sajat, gep: x.lajstrom,
+                info: (sajat < x.m ? `${fmt(x.m - sajat)} l will be recorded as UNRECORDED (an earlier refuel nobody logged). ` : '') + 'No internet now – it uploads automatically when you are back online.' });
     allapot(); elorejelzes();
   };
   try {
@@ -1291,23 +1350,22 @@ $('oszMent').addEventListener('click', async () => {
     helyiFrissites(x, d.mennyiseg);
     if (d.hiany) betolt();
     utolso = d.utolso; $('utolso').textContent = egesz(utolso);
-    const fuzet = '';
     const gyanus = kijelzo < x.m - 1;                          // the user said the display shows less than the meter difference
+    uzenet('');
     if (d.hiany > 0) {
-      uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l booked to you (${x.lajstrom}). The other ${fmt(d.hiany)} l was recorded as UNRECORDED (an earlier refuel nobody logged) – the fuel manager has been notified.` + fuzet, 'ok');
+      keszMutat({ liter: d.mennyiseg, gep: x.lajstrom, info: `${fmt(d.hiany)} l was recorded separately as UNRECORDED (an earlier refuel nobody logged). The fuel manager has been notified.` });
     } else if (gyanus && d.hiany === undefined) {
-      uzenet(`⚠ Saved as ${fmt(d.mennyiseg)} l (${x.lajstrom}) – the server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).`, 'err');
+      keszMutat({ figy: true, liter: d.mennyiseg, gep: x.lajstrom, info: `⚠ The server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).` });
     } else {
-      uzenet(`✔ Saved: ${fmt(d.mennyiseg)} l (${x.lajstrom})` + (d.figyelmeztetes ? ' – ' + d.figyelmeztetes : '') + fuzet, d.figyelmeztetes ? 'err' : 'ok');
+      keszMutat({ figy: !!d.figyelmeztetes, liter: d.mennyiseg, gep: x.lajstrom, info: d.figyelmeztetes ? '⚠ ' + d.figyelmeztetes : '' });
     }
-    if (!(gyanus && d.hiany === undefined)) fuzetJel();
     elorejelzes();
   } catch (e) {
     $('oszFigy').textContent = 'Error: ' + e.message;
     uzenet('Error: ' + e.message, 'err');
   } finally {
-    $('oszMent').disabled = false; $('oszMent').textContent = 'SAVE';
-    $('kuld').disabled = false;
+    $('oszMent').disabled = false; if ($('oszMent').textContent === 'Saving…') $('oszMent').textContent = 'SAVE';
+    kuldAllapot();
   }
 });
 

@@ -38,8 +38,12 @@
 - Tankolt mennyiség = záró óraállás − utolsó óraállás; levonódik a tartály készletéből.
 - Tartály színe: **1500 l felett zöld**, **500–1500 l narancs**, **500 l alatt piros**.
 
-## Tartály feltöltése
-Ha megjön a gázolaj, írd át a **Beállítások** lapon a „Tartály készlet (l)” értékét (B3 cella).
+## Készlet (v1.9.1-től automatikusan számolt)
+- A **Beállítások B3** egy képlet: **nyitó készlet (B9) + összes szállítás − összes tankolás**.
+  Ha egy tankolás- vagy szállítássort törölsz vagy javítasz, a készlet magától helyreáll – B3-at ne írd át kézzel.
+- A tényleges (mért) készlet beállítása: a táblázat menüjében **⛽ LHDK Fuel → Készlet beállítása (mért érték)…** → beírod a litert.
+  A script ebből visszaszámolja a B9-et, és újraindítja az e-mail értesítési szinteket.
+- Szállítás érkezésekor az appban a Fuel delivery csempét használd (az hozzáadja a Szállítások laphoz).
 
 ## Ha módosítod a Code.gs-t
 Futtasd újra a `beallitas`-t, aztán: Telepítés → Telepítések kezelése → ceruza →

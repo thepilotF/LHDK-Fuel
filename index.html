@@ -335,7 +335,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.2</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -590,11 +590,11 @@ document.documentElement.lang = NYELV;
 const STATIK = {
   'LHDK Avgas Refueling': 'LHDK Avgas Tankolás',
   'Current Quantity': 'Aktuális készlet', 'Fuel delivery': 'Üzemanyag-szállítás',
-  'Aircraft Registration': 'Lajstromjel', 'Foreign aircraft registration': 'Külföldi gép lajstromjele',
+  'Aircraft Registration': 'Lajstromjel', 'Foreign aircraft registration': 'Lajstromjel (idegen gép / ha hiányzik a listáról)',
   '(optional)': '(nem kötelező)', 'Closing meter reading': 'Záró óraállás', 'Name': 'Név',
   'Last meter reading': 'Utolsó óraállás', 'Fuel pumped': 'Tankolt mennyiség', 'shown after saving': 'mentés után jelenik meg',
   'PROCEED TO SAVE': 'TOVÁBB A MENTÉSHEZ', 'Monthly': 'Havi', 'Refuel log': 'Tankolási napló', 'Forecast': 'Előrejelzés',
-  'Select…': 'Válassz…', 'FOREIGN': 'KÜLFÖLDI', 'Now': 'Most', 'Date': 'Dátum',
+  'Select…': 'Válassz…', 'FOREIGN': 'IDEGEN/HIÁNYZIK', 'Now': 'Most', 'Date': 'Dátum',
   'Check before saving': 'Ellenőrizd mentés előtt',
   'Someone didn\'t log an earlier refuel. Enter what the counter dial shows – only that amount is booked to you, the rest is recorded as UNRECORDED.':
     'Valaki nem rögzítette a korábbi tankolását. Írd be, mit mutat a tekerő – csak ennyi kerül a nevedre, a többi UNRECORDED-ként.',
@@ -632,7 +632,7 @@ function hibaFord(h) {
   const T = [
     [/^Invalid request\.$/, 'Érvénytelen kérés.'], [/^Wrong password\.$/, 'Hibás jelszó.'],
     [/^Too many requests.*/, 'Túl sok kérés, próbáld újra egy perc múlva.'], [/^Invalid meter reading\.$/, 'Érvénytelen óraállás.'],
-    [/^Unknown registration\.$/, 'Ismeretlen lajstrom.'], [/^Foreign aircraft registration is missing\.$/, 'Hiányzik a külföldi gép lajstroma.'],
+    [/^Unknown registration\.$/, 'Ismeretlen lajstrom.'], [/^Foreign aircraft registration is missing\.$/, 'Hiányzik az idegen gép lajstroma.'],
     [/^Invalid Hobbs\.$/, 'Érvénytelen Hobbs.'], [/^Missing name\.$/, 'Hiányzik a név.'],
     [/^Fuel pumped \((.+) l\) is more than (\d+) l.*/, 'A tankolt mennyiség ($1 l) több mint $2 l – ellenőrizd a záró óraállást.'],
     [/^Fuel pumped is more than (\d+) l.*/, 'A tankolt mennyiség több mint $1 l – ellenőrizd a záró óraállást.'],
@@ -913,7 +913,7 @@ function tortaRajz(adat) {
   cimkek.forEach(h => {
     const [ex, ey] = pt(h.am, Math.sin(h.am) > 0 ? MELY * .5 : 0);
     const kx = CX + (RX + 10) * Math.cos(h.am);
-    const gn = h.x.g === 'FOREIGN' ? L('FOREIGN', 'KÜLFÖLDI') : h.x.g;
+    const gn = h.x.g === 'FOREIGN' ? L('FOREIGN', 'IDEGEN/HIÁNYZIK') : h.x.g;
     const szel = (gn.length + fmt(Math.round(h.x.l)).length + 3) * 6.6 + 4;   // estimated label width
     let vx = h.jobb ? Math.max(kx, CX + RX * .6) + 12 : Math.min(kx, CX - RX * .6) - 12;
     vx = h.jobb ? Math.min(vx, W - 4 - szel) : Math.max(vx, 4 + szel);            // keep the label inside the card
@@ -947,7 +947,7 @@ function torta(irany) {
     rendezett.forEach((x, i) => {
       const li = document.createElement('li');
       li.innerHTML = `<i style="background:var(${i < 7 ? SZINEK[i] : '--s-egyeb'})"></i><span class="n"><span class="nn"></span><small>${(x.l / osszL * 100).toFixed(1)}%</small></span><span class="v">${fmt(Math.round(x.l))} l</span>`;
-      li.querySelector('.nn').textContent = x.g === 'FOREIGN' ? L('FOREIGN', 'KÜLFÖLDI') : x.g;
+      li.querySelector('.nn').textContent = x.g === 'FOREIGN' ? L('FOREIGN', 'IDEGEN/HIÁNYZIK') : x.g;
       ul.append(li);
     });
     lap.append(ul);
@@ -1019,7 +1019,7 @@ function naploRajz() {
     const s1 = document.createElement('div'); s1.className = 's1';
     const add = (szulo, cls, txt, tag = 'span') => { const e = document.createElement(tag); e.className = cls; e.textContent = txt; szulo.append(e); return e; };
     add(s1, 'dt', x.d.slice(8, 10) + '/' + x.d.slice(5, 7) + (x.t ? ' ' + x.t : ''));
-    add(s1, 'gg', x.g.replace(/\((foreign)\)$/, L('(foreign)', '(külföldi)')));
+    add(s1, 'gg', x.g.replace(/\((foreign)\)$/, L('(foreign)', '(idegen)')));
     add(s1, 'll', fmt(x.l) + ' l');
     const s2 = document.createElement('div'); s2.className = 's2';
     add(s2, '', '👤 ' + x.n);
@@ -1219,7 +1219,7 @@ function adatAlkalmaz(d) {
   $('lajstrom').innerHTML = '<option value="">' + L('Select…', 'Válassz…') + '</option>' +
     rendez(d.lajstromok || []).map(l => {
       const v = String(l).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-      return `<option value="${v}">${l === 'IDEGEN' ? L('FOREIGN', 'KÜLFÖLDI') : v}</option>`;
+      return `<option value="${v}">${l === 'IDEGEN' ? L('FOREIGN', 'IDEGEN/HIÁNYZIK') : v}</option>`;
     }).join('');
   $('lajstrom').value = valasztott;
   idegenValt(false);

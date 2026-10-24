@@ -119,3 +119,11 @@ Szabály: **tankolás előtt nullázd a kijelzőt**, utána rögzíts az appban.
 ## Nyelv (v1.9.0-tól)
 Az app a telefon nyelve alapján automatikusan magyarul vagy angolul jelenik meg (magyar telefon → magyar, minden más → angol).
 A táblázat, az e-mailek és a lajstromok nem változnak; az „UNRECORDED” jelölés mindkét nyelven így marad.
+
+## Szállítás: óraállás a betöltés után (v2.0.0-tól)
+- A szállítás rögzítésekor kötelező megadni a kút **óraállását a betöltés után**.
+- Ez lesz az új „utolsó óraállás”: az érkeztetés utáni első tankolás biztosan innen indul.
+- Ha ez nagyobb az előző utolsó óraállásnál, a különbség **BEÜZEMELÉS** sorként kerül a Tankolások lapra
+  (név: az átvevő, megjegyzés: „Beüzemelési kifolyás…”), és levonódik a készletből. A tortadiagramon és az előrejelzésben nem számít fogyasztásnak.
+- Kisebb óraállást nem fogad el; 100 l-nél nagyobb eltérésnél ellenőrzést kér.
+- A Szállítások lapon két új oszlop: *Óraállás betöltés után*, *Beüzemelési kifolyás (l)*.

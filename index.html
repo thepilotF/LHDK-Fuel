@@ -316,6 +316,7 @@
   .szall-osszeg dt { color:var(--muted); }
   .szall-osszeg dd { margin:0; font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
   .szall-osszeg dd#szoLiter { color:var(--sarga); }
+  .szall-osszeg [hidden] { display:none; }
 
   /* Big SAVE button fixed at the bottom of the screen */
   .mentes-sav { margin:0 0 12px; }
@@ -337,7 +338,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v1.9.3</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.0.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -555,6 +556,9 @@
       <input id="szLiter" class="szkot" type="text" inputmode="decimal" placeholder="e.g. 3000">
       <label for="szAtvevo">Received by</label>
       <input id="szAtvevo" class="szkot" type="text" autocomplete="name">
+      <label for="szOra">Meter reading after filling</label>
+      <input id="szOra" class="szkot" type="text" inputmode="decimal" autocomplete="off">
+      <div class="megj" id="szOraMegj"></div>
       <label>Delivery note photo</label>
       <label class="szall-foto" id="szFotoGomb">📷 Take photo<input id="szFoto" type="file" accept="image/*" capture="environment"></label>
       <div class="szall-elonezet" id="szElonezet" hidden>
@@ -572,6 +576,8 @@
         <dt>Date</dt><dd id="szoDatum"></dd>
         <dt>Quantity received</dt><dd id="szoLiter"></dd>
         <dt>Received by</dt><dd id="szoAtvevo"></dd>
+        <dt>Meter reading after filling</dt><dd id="szoOra"></dd>
+        <dt id="szoKifCim">Start-up spill</dt><dd id="szoKif"></dd>
         <dt>New tank quantity</dt><dd id="szoKeszlet"></dd>
       </dl>
       <button type="button" class="szall-gomb" id="szKesz">Done</button>
@@ -607,7 +613,7 @@ const STATIK = {
   'Refuel saved': 'Tankolás mentve', '📒 Please also write it in the paper log.': '📒 Írd be a papír füzetbe is!', 'OK': 'OK',
   'Password': 'Jelszó', 'Unlock': 'Belépés', 'Quantity received (litres)': 'Érkezett mennyiség (liter)', 'Quantity received': 'Érkezett mennyiség',
   'Received by': 'Átvevő', 'Delivery note photo': 'Szállítólevél fotó', '📷 Take photo': '📷 Fotó készítése', 'New photo': 'Új fotó',
-  'New tank quantity': 'Új készlet', 'Done': 'Kész', 'Loading…': 'Betöltés…',
+  'New tank quantity': 'Új készlet', 'Meter reading after filling': 'Óraállás a betöltés után', 'Start-up spill': 'Beüzemelési kifolyás', 'Done': 'Kész', 'Loading…': 'Betöltés…',
   // attributes
   'Tank level': 'Tartályszint', 'Fuel delivery (password protected)': 'Üzemanyag-szállítás (jelszóval védett)',
   'e.g. D-EABC': 'pl. D-EABC', 'e.g. 1234.5': 'pl. 1234,5', 'e.g. 3000': 'pl. 3000',
@@ -641,7 +647,10 @@ function hibaFord(h) {
     [/^Closing meter reading \((.+)\) is not greater than the last one \((.+)\)\.$/, 'A záró óraállás ($1) nem nagyobb az utolsónál ($2).'],
     [/^No delivery password is set.*/, 'Nincs beállítva szállítási jelszó (Beállítások lap, B6).'], [/^Photo is too large\.$/, 'Túl nagy a fotó.'],
     [/^Invalid quantity\.$/, 'Érvénytelen mennyiség.'], [/^Missing receiver name\.$/, 'Hiányzik az átvevő neve.'],
-    [/^Missing delivery note photo\.$/, 'Hiányzik a szállítólevél fotója.'], [/^Unknown error$/, 'Ismeretlen hiba']];
+    [/^Missing delivery note photo\.$/, 'Hiányzik a szállítólevél fotója.'],
+    [/^Missing meter reading after filling\.$/, 'Hiányzik a betöltés utáni óraállás.'],
+    [/^Meter reading after filling \((.+)\) is lower than the last one \((.+)\)\.$/, 'A betöltés utáni óraállás ($1) kisebb az utolsónál ($2).'],
+    [/^Meter reading after filling is (.+) l above the last one.*/, 'A betöltés utáni óraállás $1 l-rel több az utolsónál – ellenőrizd.'], [/^Unknown error$/, 'Ismeretlen hiba']];
   for (const [re, hu] of T) if (re.test(h)) return h.replace(re, hu);
   return h;
 }
@@ -1021,7 +1030,7 @@ function naploRajz() {
     const s1 = document.createElement('div'); s1.className = 's1';
     const add = (szulo, cls, txt, tag = 'span') => { const e = document.createElement(tag); e.className = cls; e.textContent = txt; szulo.append(e); return e; };
     add(s1, 'dt', x.d.slice(8, 10) + '/' + x.d.slice(5, 7) + (x.t ? ' ' + x.t : ''));
-    add(s1, 'gg', x.g.replace(/\((foreign)\)$/, L('(foreign)', '(idegen)')));
+    add(s1, 'gg', x.g === 'BEÜZEMELÉS' ? L('START-UP SPILL', 'BEÜZEMELÉSI KIFOLYÁS') : x.g.replace(/\((foreign)\)$/, L('(foreign)', '(idegen)')));
     add(s1, 'll', fmt(x.l) + ' l');
     const s2 = document.createElement('div'); s2.className = 's2';
     add(s2, '', '👤 ' + x.n);
@@ -1152,10 +1161,20 @@ function szUz(t, ok) { $('szUzenet').textContent = t || ''; $('szUzenet').classN
 function szLepes(n) { [1, 2, 3].forEach(i => $('szLepes' + i).hidden = i !== n); szUz(''); }
 function szNyit() {
   szJelszo = ''; szKep = null;
-  ['szJelszo', 'szLiter', 'szAtvevo'].forEach(id => { $(id).value = ''; $(id).classList.remove('ures'); });
+  ['szJelszo', 'szLiter', 'szAtvevo', 'szOra'].forEach(id => { $(id).value = ''; $(id).classList.remove('ures'); });
+  szOraInfo();
   $('szFoto').value = ''; $('szElonezet').hidden = true; $('szFotoGomb').hidden = false;
   szLepes(1); $('szallAblak').hidden = false; setTimeout(() => $('szJelszo').focus(), 50);
 }
+// the pump meter after the tanker filled the tank: the next refuel starts from here, a small difference is a start-up spill
+function szOraInfo() {
+  const v = szam($('szOra').value), k = isNaN(v) ? null : Math.round((v - utolso) * 100) / 100;
+  let t = L(`Last meter reading: ${egesz(utolso)}`, `Utolsó óraállás: ${egesz(utolso)}`);
+  if (k !== null && k > 0) t += L(` · ${fmt(k)} l will be logged as start-up spill`, ` · ${fmt(k)} l beüzemelési kifolyásként kerül rögzítésre`);
+  if (k !== null && k < 0) t += L(' · ⚠ lower than the last meter reading', ' · ⚠ kisebb, mint az utolsó óraállás');
+  $('szOraMegj').textContent = t;
+}
+$('szOra').addEventListener('input', szOraInfo);
 function szBezar() { $('szallAblak').hidden = true; szJelszo = ''; szKep = null; }
 async function szPost(adat) {
   const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(adat) });
@@ -1185,20 +1204,27 @@ $('szFoto').addEventListener('change', async () => {
 });
 $('szUjKep').addEventListener('click', () => { $('szFoto').value = ''; $('szFoto').click(); });
 $('szMent').addEventListener('click', async () => {
-  const liter = szam($('szLiter').value), atvevo = $('szAtvevo').value.trim();
-  ['szLiter', 'szAtvevo'].forEach(id => $(id).classList.toggle('ures', !$(id).value.trim()));
-  if (isNaN(liter) || liter <= 0 || !atvevo) { enterDataHang(); szUz(L('ENTER DATA', 'HIÁNYZÓ ADAT')); return; }
+  const liter = szam($('szLiter').value), atvevo = $('szAtvevo').value.trim(), ora = szam($('szOra').value);
+  ['szLiter', 'szAtvevo', 'szOra'].forEach(id => $(id).classList.toggle('ures', !$(id).value.trim()));
+  if (isNaN(liter) || liter <= 0 || !atvevo || isNaN(ora)) { enterDataHang(); szUz(L('ENTER DATA', 'HIÁNYZÓ ADAT')); return; }
+  const kif = Math.round((ora - utolso) * 100) / 100;
+  if (kif < 0) { $('szOra').classList.add('ures'); szUz(L(`The meter reading after filling cannot be lower than the last one (${egesz(utolso)}).`, `A betöltés utáni óraállás nem lehet kisebb az utolsónál (${egesz(utolso)}).`)); return; }
+  if (kif > 100) { $('szOra').classList.add('ures'); szUz(L(`That is ${fmt(kif)} l above the last meter reading – please check it.`, `Ez ${fmt(kif)} l-rel több az utolsó óraállásnál – ellenőrizd.`)); return; }
   if (!szKep) { szUz(L('Take a photo of the delivery note.', 'Fotózd le a szállítólevelet.')); return; }
   if (keszlet + liter > kapacitas && !confirm(L(`${fmt(liter)} l would bring the tank to ${fmt(keszlet + liter)} l, above its ${fmt(kapacitas)} l capacity. Save anyway?`, `${fmt(liter)} l-rel a tartály ${fmt(keszlet + liter)} l lenne, több mint a ${fmt(kapacitas)} l kapacitás. Mégis mentsem?`))) return;
   $('szMent').disabled = true; $('szUjKep').disabled = true; szUz(L('Saving (uploading photo)…', 'Mentés (fotó feltöltése)…'), true);
   try {
-    const d = await szPost({ action: 'szallitas', jelszo: szJelszo, liter, atvevo, kep: szKep });
+    const d = await szPost({ action: 'szallitas', jelszo: szJelszo, liter, atvevo, ora, kep: szKep });
     if (!d.ok) throw new Error(hibaFord(d.hiba) || L('Unknown error', 'Ismeretlen hiba'));
     $('szoDatum').textContent = d.datum.split('.').reverse().join('/') + ' ' + d.ido;
     $('szoLiter').textContent = fmt(d.liter) + ' l';
     $('szoAtvevo').textContent = d.atvevo;
     $('szoKeszlet').textContent = fmt(d.keszlet) + ' l' + (d.tul ? ' ⚠' : '');
+    $('szoOra').textContent = egesz(d.ora);
+    $('szoKif').textContent = fmt(d.kifolyas || 0) + ' l'; $('szoKif').hidden = $('szoKifCim').hidden = !(d.kifolyas > 0);
     keszlet = d.keszlet; kapacitas = d.kapacitas || kapacitas; tartaly(keszlet); elorejelzes();
+    if (d.utolso) { utolso = d.utolso; $('utolso').textContent = egesz(utolso); }
+    betolt();                                                   // refresh the log (start-up spill row)
     szLepes(3);
   } catch (e) { szUz(L('Error: ', 'Hiba: ') + e.message); }
   finally { $('szMent').disabled = false; $('szUjKep').disabled = false; }

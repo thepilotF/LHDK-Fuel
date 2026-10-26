@@ -338,7 +338,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.0.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.0.1</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1525,6 +1525,21 @@ $('oszMent').addEventListener('click', async () => {
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale !== undefined && e.scale !== 1)) e.preventDefault(); }, { passive: false });
 // double-tap zoom is switched off by touch-action: manipulation (CSS)
+
+// --- Keep the screen awake while the app is open (Screen Wake Lock) ---
+// released automatically when the app goes to the background; after 10 minutes without a touch it lets the screen sleep again
+let ebrenZar = null, ebrenIdo = null;
+async function ebrenTart() {
+  try {
+    if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+    if (!ebrenZar || ebrenZar.released) ebrenZar = await navigator.wakeLock.request('screen');
+  } catch (e) { /* not supported / denied (e.g. battery saver) – nothing to do */ }
+  clearTimeout(ebrenIdo);
+  ebrenIdo = setTimeout(() => { try { ebrenZar && ebrenZar.release(); } catch (e) {} ebrenZar = null; }, 10 * 60000);
+}
+ebrenTart();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ebrenTart(); });
+['pointerdown', 'keydown'].forEach(t => document.addEventListener(t, ebrenTart, { passive: true }));
 
 // --- Start ---
 function datumKartya() {

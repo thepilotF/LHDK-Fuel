@@ -363,7 +363,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.1.0</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.1.1</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -1077,13 +1077,18 @@ function naploSorElem(x) {
 
 // --- Private stock: fuel bought by a company for its own aircraft (separate balance, the common tank is not affected) ---
 const EGYEDI_TESZT = true;           // temporary "under test" notice when the tab is opened
-let egyedi = [], egyediNyitva = '';
+let egyedi = [], egyediNyitva = '', egyediRegiSzerver = false;
 function egyediCegLaj(v) { return egyedi.find(c => (c.gepek || []).includes(String(v || '').toUpperCase())) || null; }
 function egyediRajz() {
   const box = $('egyediLista'); if (!box) return;
   box.innerHTML = '';
   $('egyediDb').textContent = egyedi.length ? L(`${egyedi.length} accounts`, `${egyedi.length} egyenleg`) : '';
-  if (!egyedi.length) { box.innerHTML = '<div class="naplo-ures">' + L('No private stocks set up yet.', 'Még nincs beállított egyedi készlet.') + '</div>'; return; }
+  if (!egyedi.length) {
+    box.innerHTML = '<div class="naplo-ures">' + (egyediRegiSzerver
+      ? L('The server script has not been updated yet – deploy the new Code.gs as a new version.', 'A szerver script még nincs frissítve – telepítsd az új Code.gs-t új verzióként.')
+      : L('No private stocks set up yet.', 'Még nincs beállított egyedi készlet.')) + '</div>';
+    return;
+  }
   const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   egyedi.forEach(c => {
     const kart = document.createElement('div'); kart.className = 'egyedi-ceg';
@@ -1379,6 +1384,7 @@ function adatAlkalmaz(d) {
   sorban().forEach(x => { if (x.zaro > utolso) { keszlet = Math.max(0, keszlet - (x.zaro - utolso)); utolso = x.zaro; } });
   if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
   if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
+  egyediRegiSzerver = !('egyedi' in d); if (egyediRegiSzerver) egyediRajz();
   if (Array.isArray(d.egyedi)) {
     egyedi = JSON.parse(JSON.stringify(d.egyedi));
     sorban().forEach(x => { if (x.egyediNev) egyediLevon(x.egyediNev, { lajstrom: x.g, nev: x.nev, zaro: x.zaro, hobbs: x.hobbs }, x.l, true); });

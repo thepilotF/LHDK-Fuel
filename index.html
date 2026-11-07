@@ -196,7 +196,7 @@
 
   /* Tiles: horizontal swipe */
   .csempe-fulek { display:flex; gap:6px; margin:4px 0 8px; }
-  .csempe-fulek button { flex:1; font:inherit; font-size:.82rem; font-weight:600; padding:7px 4px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); cursor:pointer; }
+  .csempe-fulek button { flex:1; font:inherit; font-size:.78rem; line-height:1.15; font-weight:600; padding:7px 3px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--muted); cursor:pointer; }
   .csempe-fulek button.akt { background:var(--accent); border-color:var(--accent); color:#fff; }
   .csempe-sav { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; align-items:flex-start; margin:0 -16px; padding:0 16px; scroll-padding:0 16px; }
   .csempe-sav::-webkit-scrollbar { display:none; }
@@ -223,6 +223,31 @@
   .naplo-sor .s2 a { color:var(--accent); text-decoration:none; }
   .naplo-ures { color:var(--muted); font-size:.9rem; padding:12px 0; }
 
+  /* Private stock (per-company balances) */
+  .egyedi-lista { display:flex; flex-direction:column; gap:10px; }
+  .egyedi-ceg { border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--bg); }
+  .egyedi-fej { width:100%; display:block; text-align:left; background:none; border:0; padding:0; font:inherit; color:inherit; cursor:pointer; }
+  .egyedi-sor1 { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .egyedi-sor1 b { font-size:1rem; }
+  .egyedi-maradt { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:.85rem; color:var(--muted); }
+  .egyedi-maradt strong { font-size:1.15rem; color:var(--text); }
+  .egyedi-gepek { font-size:.75rem; color:var(--muted); margin-top:2px; display:flex; justify-content:space-between; }
+  .egyedi-sav { position:relative; height:12px; border-radius:6px; background:var(--card); border:1px solid var(--line); overflow:hidden; margin-top:8px; }
+  .egyedi-sav u { position:absolute; left:0; top:0; bottom:0; border-radius:6px; transition:width .6s ease; }
+  .egyedi-skala { display:flex; justify-content:space-between; font-size:.68rem; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .egyedi-reszlet { margin-top:8px; }
+  .egyedi-reszlet .naplo-lista { max-height:320px; }
+  .egyedi-kerdes { margin:12px 0 0; padding:12px; border-radius:12px; border:2px solid var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--card)); }
+  .egyedi-kerdes[hidden], .ek-gombok[hidden] { display:none !important; }
+  .egyedi-kerdes .ek-cim { font-weight:700; line-height:1.35; }
+  .egyedi-kerdes .ek-gombok { display:flex; gap:8px; margin-top:10px; }
+  .egyedi-kerdes .ek-gombok button { flex:1; height:46px; border-radius:10px; border:2px solid var(--line); background:var(--card); color:var(--text); font:inherit; font-weight:700; cursor:pointer; }
+  .egyedi-kerdes .ek-gombok button.val { border-color:var(--accent); background:var(--accent); color:#fff; }
+  .egyedi-kerdes.hiba { border-color:var(--piros); }
+  .egyedi-kerdes .ek-info { font-size:.9rem; line-height:1.35; }
+  .kesz-egyedi { margin-top:10px; padding:10px 12px; border-radius:10px; font-size:.95rem; line-height:1.4; text-align:left; background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
+  .kesz-egyedi[hidden] { display:none; }
+  .teszt-jel { font-size:2.2rem; text-align:center; }
   /* Forecast */
   .elo-most { display:flex; justify-content:space-between; align-items:baseline; padding:8px 12px; border-radius:10px; background:var(--bg); margin-bottom:8px; }
   .elo-most span { color:var(--muted); font-size:.85rem; }
@@ -338,7 +363,7 @@
 <body>
 <main>
   <h1>LHDK Avgas Refueling</h1>
-  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.0.1</span></div>
+  <div class="copyright">© 2026 LHDK Fuel App by Adam Fulop <span class="verzio">v2.1.0</span></div>
 
   <div class="felso-sor">
     <section class="card tartaly-kartya" id="tartalyKartya">
@@ -463,7 +488,7 @@
   </div>
 
   <nav class="csempe-fulek" id="csempeFulek">
-    <button type="button" data-i="0">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button>
+    <button type="button" data-i="0">Monthly</button><button type="button" data-i="1">Refuel log</button><button type="button" data-i="2">Forecast</button><button type="button" data-i="3" id="egyediFul">Private stock</button>
   </nav>
   <div class="csempe-sav" id="csempeSav" hidden>
     <section class="card csempe torta-kartya" aria-label="Fuel by aircraft per month">
@@ -488,8 +513,13 @@
       <ol class="elo-lista" id="eloLista"></ol>
       <p class="elo-megj" id="eloMegj"></p>
     </section>
+
+    <section class="card csempe egyedi-kartya" aria-label="Private stock">
+      <div class="csempe-fej"><b>Private stock</b><span id="egyediDb"></span></div>
+      <div class="egyedi-lista" id="egyediLista"></div>
+    </section>
   </div>
-  <div class="csempe-pottyok" id="csempePottyok" hidden><i class="akt"></i><i></i><i></i></div>
+  <div class="csempe-pottyok" id="csempePottyok" hidden><i class="akt"></i><i></i><i></i><i></i></div>
 
 </main>
 
@@ -498,6 +528,10 @@
   <div class="szall-panel" role="dialog" aria-modal="true" aria-labelledby="oszCim">
     <div class="szall-fej"><b id="oszCim">Check before saving</b><button type="button" class="szall-x" id="oszBezar" aria-label="Back to edit">✕</button></div>
     <dl class="osz-lista" id="oszLista"></dl>
+    <div class="egyedi-kerdes" id="egyediKerdes" hidden>
+      <div class="ek-cim" id="ekCim"></div>
+      <div class="ek-gombok" id="ekGombok"><button type="button" id="ekIgen">Yes</button><button type="button" id="ekNem">No</button></div>
+    </div>
     <div class="kijelzo-kerdes" id="kijelzoKerdes">
       <div class="kk-cim" id="kkCim">Does the pump's counter dial show <b id="kkLiter">–</b>?</div>
       <div class="kk-bevitel" id="kkBevitel" hidden>
@@ -527,6 +561,16 @@
   </div>
 </div>
 
+<!-- Private stock: temporary "under test" notice -->
+<div class="szall-hatter" id="tesztAblak" hidden>
+  <div class="szall-panel" role="alertdialog" aria-modal="true" aria-labelledby="tesztCim">
+    <div class="teszt-jel">🧪</div>
+    <div id="tesztCim" style="text-align:center;font-size:1.3rem;font-weight:800;margin-top:4px">Under test</div>
+    <p class="hobbs-kerdes" style="text-align:center">This feature is still being tested – the figures in it do not reflect reality.</p>
+    <button type="button" class="szall-gomb" id="tesztOk">OK</button>
+  </div>
+</div>
+
 <!-- Refuel saved -->
 <div class="szall-hatter" id="keszAblak" hidden>
   <div class="szall-panel kesz-panel" id="keszPanel" role="alertdialog" aria-modal="true" aria-labelledby="keszCim">
@@ -535,6 +579,7 @@
     <div class="kesz-liter" id="keszLiter">–</div>
     <div class="kesz-gep" id="keszGep"></div>
     <div class="kesz-info" id="keszInfo" hidden></div>
+    <div class="kesz-egyedi" id="keszEgyedi" hidden></div>
     <div class="kesz-fuzet" id="keszFuzet"><span class="fuzet-jel">📒 Please also write it in the paper log.</span></div>
     <button type="button" class="szall-gomb" id="keszOk">OK</button>
   </div>
@@ -614,6 +659,8 @@ const STATIK = {
   'Password': 'Jelszó', 'Unlock': 'Belépés', 'Quantity received (litres)': 'Érkezett mennyiség (liter)', 'Quantity received': 'Érkezett mennyiség',
   'Received by': 'Átvevő', 'Delivery note photo': 'Szállítólevél fotó', '📷 Take photo': '📷 Fotó készítése', 'New photo': 'Új fotó',
   'New tank quantity': 'Új készlet', 'Meter reading after filling': 'Óraállás a betöltés után', 'Start-up spill': 'Beüzemelési kifolyás', 'Done': 'Kész', 'Loading…': 'Betöltés…',
+  'Private stock': 'Egyedi készletek', 'Yes': 'Igen', 'No': 'Nem', 'Under test': 'Tesztelés alatt',
+  'This feature is still being tested – the figures in it do not reflect reality.': 'Ez a funkció még tesztelés alatt áll – a benne szereplő adatok nem fedik a valóságot.',
   // attributes
   'Tank level': 'Tartályszint', 'Fuel delivery (password protected)': 'Üzemanyag-szállítás (jelszóval védett)',
   'e.g. D-EABC': 'pl. D-EABC', 'e.g. 1234.5': 'pl. 1234,5', 'e.g. 3000': 'pl. 3000',
@@ -632,6 +679,7 @@ function statikFordit() {
   }));
   document.title = 'LHDK Avgas Tankolás';
   const cs = document.getElementById('szallCsempeSzoveg'); if (cs) cs.textContent = 'Szállítás';   // short label fits the tile
+  const ef = document.getElementById('egyediFul'); if (ef) ef.textContent = 'Egyedi készlet';
 }
 statikFordit();
 // server messages (the server answers in English)
@@ -990,6 +1038,7 @@ $('csempeFulek').addEventListener('click', e => {
     return;
   }
   const voltRejtve = sav.hidden;
+  if (i === '3' && EGYEDI_TESZT) $('tesztAblak').hidden = false;      // temporary: feature under test
   sav.hidden = false; $('csempePottyok').hidden = false;
   [...$('csempeFulek').children].forEach(b => b.classList.toggle('akt', b === gomb));
   sav.scrollTo({ left: +i * (sav.children[0].offsetWidth + 12), behavior: voltRejtve ? 'auto' : 'smooth' });
@@ -1011,6 +1060,80 @@ function demoNaplo() {
   }
   return ki;
 }
+function naploSorElem(x) {
+  const sor = document.createElement('div'); sor.className = 'naplo-sor';
+  const s1 = document.createElement('div'); s1.className = 's1';
+  const add = (szulo, cls, txt, tag = 'span') => { const e = document.createElement(tag); e.className = cls; e.textContent = txt; szulo.append(e); return e; };
+  add(s1, 'dt', x.d.slice(8, 10) + '/' + x.d.slice(5, 7) + (x.t ? ' ' + x.t : ''));
+  add(s1, 'gg', x.g);
+  add(s1, 'll', fmt(x.l) + ' l');
+  const s2 = document.createElement('div'); s2.className = 's2';
+  add(s2, '', '👤 ' + x.n);
+  if (x.h !== null && x.h !== undefined) add(s2, '', 'Hobbs ' + fmt(x.h));
+  if (x.z) add(s2, '', L('Meter ', 'Óraállás ') + (x.e ? fmt(x.e) + ' → ' : '') + fmt(x.z));
+  if (x.varo) add(s2, '', L('⏳ waiting to upload', '⏳ feltöltésre vár'));
+  sor.append(s1, s2); return sor;
+}
+
+// --- Private stock: fuel bought by a company for its own aircraft (separate balance, the common tank is not affected) ---
+const EGYEDI_TESZT = true;           // temporary "under test" notice when the tab is opened
+let egyedi = [], egyediNyitva = '';
+function egyediCegLaj(v) { return egyedi.find(c => (c.gepek || []).includes(String(v || '').toUpperCase())) || null; }
+function egyediRajz() {
+  const box = $('egyediLista'); if (!box) return;
+  box.innerHTML = '';
+  $('egyediDb').textContent = egyedi.length ? L(`${egyedi.length} accounts`, `${egyedi.length} egyenleg`) : '';
+  if (!egyedi.length) { box.innerHTML = '<div class="naplo-ures">' + L('No private stocks set up yet.', 'Még nincs beállított egyedi készlet.') + '</div>'; return; }
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  egyedi.forEach(c => {
+    const kart = document.createElement('div'); kart.className = 'egyedi-ceg';
+    const fej = document.createElement('button'); fej.type = 'button'; fej.className = 'egyedi-fej';
+    const arany = c.vasarolt > 0 ? Math.max(0, Math.min(1, c.maradt / c.vasarolt)) : 0;
+    const szin = arany > 0.3 ? 'var(--zold)' : arany > 0.1 ? 'var(--narancs)' : 'var(--piros)';
+    fej.innerHTML = `<div class="egyedi-sor1"><b>${esc(c.nev)}</b><span class="egyedi-maradt"><strong>${fmt(Math.round(c.maradt))} l</strong> / ${fmt(Math.round(c.vasarolt))} l</span></div>
+      <div class="egyedi-gepek"><span>${esc((c.gepek || []).join(', '))}</span><span>${egyediNyitva === c.nev ? '▲' : '▼'}</span></div>
+      <div class="egyedi-sav"><u style="width:${(arany * 100).toFixed(1)}%;background:${szin}"></u></div>
+      <div class="egyedi-skala"><span>0</span><span>${L('used', 'felhasznált')}: ${fmt(Math.round(c.felhasznalt))} l</span><span>${fmt(Math.round(c.vasarolt))} l</span></div>`;
+    fej.addEventListener('click', () => { egyediNyitva = egyediNyitva === c.nev ? '' : c.nev; egyediRajz(); });
+    kart.append(fej);
+    if (egyediNyitva === c.nev) {
+      const r = document.createElement('div'); r.className = 'egyedi-reszlet';
+      const lista = document.createElement('div'); lista.className = 'naplo-lista';
+      if (!(c.tetelek || []).length) lista.innerHTML = '<div class="naplo-ures">' + L('No refuels charged to this account yet.', 'Ehhez az egyenleghez még nem tartozik tankolás.') + '</div>';
+      else {
+        let ho = '';
+        c.tetelek.forEach(x => {
+          const k = x.d.slice(0, 7);
+          if (k !== ho) {
+            ho = k; const h = document.createElement('div'); h.className = 'naplo-ho';
+            const ossz = c.tetelek.filter(y => y.d.slice(0, 7) === k).reduce((a, y) => a + y.l, 0);
+            h.innerHTML = `<span>${hoNev(k)}</span><span>${fmt(Math.round(ossz))} l</span>`; lista.append(h);
+          }
+          lista.append(naploSorElem(x));
+        });
+      }
+      r.append(lista); kart.append(r);
+    }
+    box.append(kart);
+  });
+}
+function egyediLevon(nev, x, liter, varo) {          // local picture right after a save (online or offline)
+  const c = egyedi.find(e => e.nev === nev); if (!c) return;
+  c.felhasznalt = Math.round((c.felhasznalt + liter) * 100) / 100; c.maradt = Math.round((c.vasarolt - c.felhasznalt) * 100) / 100;
+  const m = new Date(), k = m.getFullYear() + '.' + String(m.getMonth() + 1).padStart(2, '0') + '.' + String(m.getDate()).padStart(2, '0');
+  c.tetelek = [{ d: k, t: String(m.getHours()).padStart(2, '0') + ':' + String(m.getMinutes()).padStart(2, '0'), g: x.lajstrom, n: x.nev, e: x.zaro - liter, z: x.zaro, l: liter, h: x.hobbs, varo: !!varo }].concat(c.tetelek || []);
+  egyediRajz();
+}
+$('tesztOk').addEventListener('click', () => { $('tesztAblak').hidden = true; });
+$('tesztAblak').addEventListener('click', e => { if (e.target === $('tesztAblak')) $('tesztAblak').hidden = true; });
+function ekValaszt(v) {
+  if (!fuggo) return; fuggo.egyediValasz = v;
+  $('ekIgen').classList.toggle('val', v === true); $('ekNem').classList.toggle('val', v === false);
+  $('egyediKerdes').classList.remove('hiba'); $('oszFigy').textContent = '';
+}
+$('ekIgen').addEventListener('click', () => ekValaszt(true));
+$('ekNem').addEventListener('click', () => ekValaszt(false));
+
 function naploRajz() {
   const lista = DEMO_ADAT ? naplo.concat(demoNaplo()) : naplo;
   const box = $('naploLista'); box.innerHTML = '';
@@ -1256,6 +1379,11 @@ function adatAlkalmaz(d) {
   sorban().forEach(x => { if (x.zaro > utolso) { keszlet = Math.max(0, keszlet - (x.zaro - utolso)); utolso = x.zaro; } });
   if (Array.isArray(d.napi)) { napi = d.napi; grafikon(); }
   if (Array.isArray(d.utolsok)) { utolsok = d.utolsok; utolso5(); }
+  if (Array.isArray(d.egyedi)) {
+    egyedi = JSON.parse(JSON.stringify(d.egyedi));
+    sorban().forEach(x => { if (x.egyediNev) egyediLevon(x.egyediNev, { lajstrom: x.g, nev: x.nev, zaro: x.zaro, hobbs: x.hobbs }, x.l, true); });
+    egyediRajz();
+  }
   if (Array.isArray(d.naplo)) { naplo = sorban().map(x => ({ d: x.d, t: x.t, g: x.g, n: x.nev, e: null, z: x.zaro, l: x.l, h: x.hobbs, f: '', varo: true })).concat(d.naplo); naploRajz(); }
   if (d.havi) { havi = d.havi; torta(); }
   adatMegvan = true; $('kapSzoveg').classList.remove('tolt-szoveg');
@@ -1346,6 +1474,8 @@ function keszMutat(o) {
   $('keszGep').textContent = o.gep + L(' · booked to you', ' · a nevedre');
   $('keszInfo').textContent = o.info || ''; $('keszInfo').hidden = !o.info;
   $('keszFuzet').hidden = !FUZET_EMLEKEZTETO;
+  $('keszEgyedi').hidden = !o.egyedi;
+  if (o.egyedi) $('keszEgyedi').textContent = L(`Will be deducted from ${o.egyedi.nev}'s private stock. Balance: ${fmt(Math.round(o.egyedi.maradt || 0))} l`, `Levonódik a(z) ${o.egyedi.nev} egyedi készletéből. Egyenleg: ${fmt(Math.round(o.egyedi.maradt || 0))} l`);
   $('keszAblak').hidden = false; $('keszOk').focus();
   try { localStorage.setItem(PIHENO_KULCS, String(Date.now())); } catch (e) {}
   kuldAllapot();
@@ -1432,6 +1562,19 @@ $('urlap').addEventListener('submit', ev => {
   $('kkLiter').textContent = fmt(m) + ' l';
   $('kkBevitel').hidden = true; $('kkNem').hidden = false; $('kkErtek').value = ''; $('kijelzoKerdes').classList.remove('nem');
   $('oszMent').textContent = L(`✓ Yes, ${fmt(m)} l – SAVE`, `✓ Igen, ${fmt(m)} l – MENTÉS`);
+  // private stock: ask (CuvAir, Nemes-Török) or just inform (HA-SEP, HA-SBL)
+  const ceg = valasztott !== 'IDEGEN' ? egyediCegLaj(valasztott) : null;
+  fuggo.ceg = ceg; fuggo.egyediValasz = ceg ? (ceg.kerdez ? null : true) : false;
+  $('egyediKerdes').hidden = !ceg; $('egyediKerdes').classList.remove('hiba');
+  $('ekIgen').classList.remove('val'); $('ekNem').classList.remove('val');
+  if (ceg) {
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    $('ekGombok').hidden = !ceg.kerdez;
+    $('ekCim').innerHTML = ceg.kerdez
+      ? L(`Deduct this refuel from <b>${esc(ceg.nev)}</b>'s private stock?`, `Vonódjon ez a tankolás a(z) <b>${esc(ceg.nev)}</b> egyedi készletéből?`) +
+        `<div class="ek-info" style="font-weight:400;color:var(--muted);margin-top:4px">${L('Balance now', 'Egyenleg most')}: ${fmt(Math.round(ceg.maradt))} l</div>`
+      : `<span class="ek-info">${L(`Deducted from <b>${esc(ceg.nev)}</b>'s private stock`, `Levonódik a(z) <b>${esc(ceg.nev)}</b> egyedi készletéből`)} (${fmt(Math.round(ceg.maradt))} l → ${fmt(Math.round(ceg.maradt - m))} l)</span>`;
+  }
   $('oszAblak').hidden = false;
 });
 function oszZar() { $('oszAblak').hidden = true; }
@@ -1468,7 +1611,12 @@ $('oszMent').addEventListener('click', async () => {
     kijelzo = szam($('kkErtek').value);
     if (isNaN(kijelzo) || kijelzo < 0) { $('kkErtek').classList.add('ures'); $('oszFigy').textContent = L('Enter what the counter dial shows.', 'Írd be, mit mutat a tekerő.'); enterDataHang(); return; }
   }
-  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs === null ? '' : x.hobbs, nev: x.nev, kijelzo, id, ido: most.toISOString() };
+  if (x.ceg && x.egyediValasz === null) {
+    $('egyediKerdes').classList.add('hiba'); $('oszFigy').textContent = L('Please answer: deduct from the private stock – Yes or No?', 'Válaszolj: levonódjon az egyedi készletből – Igen vagy Nem?');
+    $('egyediKerdes').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); enterDataHang(); return;
+  }
+  const egyediNev = x.ceg && x.egyediValasz ? x.ceg.nev : '';
+  const kuld = { lajstrom: x.valasztott, idegen: x.idegen, zaro: x.zaro, hobbs: x.hobbs === null ? '' : x.hobbs, nev: x.nev, kijelzo, egyedi: !!egyediNev, id, ido: most.toISOString() };
   try { localStorage.setItem('nev', x.nev); } catch (e) {}
   $('oszMent').disabled = true; $('oszMent').textContent = L('Saving…', 'Mentés…');
   $('kuld').disabled = true;
@@ -1476,14 +1624,15 @@ $('oszMent').addEventListener('click', async () => {
     // no connection: keep it on the phone, upload later (the server places it correctly even if others saved meanwhile)
     const sor = sorban();
     sor.push({ kuld: { ...kuld, offline: true }, d: kuld.ido.slice(0, 10).replace(/-/g, '.'), t: String(most.getHours()).padStart(2, '0') + ':' + String(most.getMinutes()).padStart(2, '0'),
-               g: x.lajstrom, nev: x.nev, zaro: x.zaro, hobbs: x.hobbs, l: x.m });
+               g: x.lajstrom, nev: x.nev, zaro: x.zaro, hobbs: x.hobbs, l: x.m, egyediNev });
     tarol(SOR_KULCS, sor);
     oszZar(); fuggo = null;
     keszlet = Math.max(0, keszlet - x.m); tartaly(keszlet);
     const sajat = (kijelzo > 0 && kijelzo < x.m - 0.05) ? kijelzo : x.m;
     helyiFrissites(x, sajat, true);
+    if (egyediNev) egyediLevon(egyediNev, x, sajat, true);
     uzenet('');
-    keszMutat({ cim: L('Saved on this phone', 'Mentve a telefonon'), liter: sajat, gep: x.lajstrom,
+    keszMutat({ egyedi: egyediNev ? { nev: egyediNev, maradt: (egyedi.find(e => e.nev === egyediNev) || {}).maradt } : null, cim: L('Saved on this phone', 'Mentve a telefonon'), liter: sajat, gep: x.lajstrom,
                 info: (sajat < x.m ? L(`${fmt(x.m - sajat)} l will be recorded as UNRECORDED (an earlier refuel nobody logged). `, `${fmt(x.m - sajat)} l UNRECORDED-ként kerül rögzítésre (egy korábbi, nem rögzített tankolás). `) : '') +
                 L('No internet now – it uploads automatically when you are back online.', 'Most nincs internet – amint lesz, magától feltöltődik.') });
     allapot(); elorejelzes();
@@ -1510,6 +1659,13 @@ $('oszMent').addEventListener('click', async () => {
       keszMutat({ figy: true, liter: d.mennyiseg, gep: x.lajstrom, info: L(`⚠ The server could not split it into your ${fmt(kijelzo)} l + ${fmt(x.m - kijelzo)} l UNRECORDED. Please tell the fuel manager (the server script needs updating).`, `⚠ A szerver nem tudta szétbontani a te ${fmt(kijelzo)} l-edre + ${fmt(x.m - kijelzo)} l UNRECORDED-re. Szólj a tankolásfelelősnek (frissíteni kell a szerver scriptet).`) });
     } else {
       keszMutat({ figy: !!d.figyelmeztetes, liter: d.mennyiseg, gep: x.lajstrom, info: d.figyelmeztetes ? '⚠ ' + hibaFord(d.figyelmeztetes) : '' });
+    }
+    if (d.egyedi && d.egyedi.nev) {
+      egyediLevon(d.egyedi.nev, x, d.mennyiseg, false);
+      const c = egyedi.find(e => e.nev === d.egyedi.nev);
+      if (c) { c.maradt = d.egyedi.maradt; c.vasarolt = d.egyedi.vasarolt; c.felhasznalt = Math.round((c.vasarolt - c.maradt) * 100) / 100; egyediRajz(); }
+      $('keszEgyedi').textContent = L(`Deducted from ${d.egyedi.nev}'s private stock. Balance: ${fmt(Math.round(d.egyedi.maradt))} l`, `Levonva a(z) ${d.egyedi.nev} egyedi készletéből. Egyenleg: ${fmt(Math.round(d.egyedi.maradt))} l`);
+      $('keszEgyedi').hidden = false;
     }
     elorejelzes();
   } catch (e) {

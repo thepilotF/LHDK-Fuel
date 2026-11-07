@@ -127,3 +127,15 @@ A táblázat, az e-mailek és a lajstromok nem változnak; az „UNRECORDED” j
   (név: az átvevő, megjegyzés: „Beüzemelési kifolyás…”), és levonódik a készletből. A tortadiagramon és az előrejelzésben nem számít fogyasztásnak.
 - Kisebb óraállást nem fogad el; 100 l-nél nagyobb eltérésnél ellenőrzést kér.
 - A Szállítások lapon két új oszlop: *Óraállás betöltés után*, *Beüzemelési kifolyás (l)*.
+
+## Egyedi készletek (v2.1.0-tól, TESZT)
+- Új lap: **Egyedi készletek** – cég / név, lajstromok (vesszővel), kérdezzen-e mentés előtt (igen/nem), vásárolt készlet (l).
+  A `beallitas` hozza létre: CuvAir Service Kft. (HA-FBL, HA-SGK, kérdez), Nemes-Török (HA-BFD, kérdez),
+  Szilágyi Tibor (HA-SEP, nem kérdez), Dóka Tamás (HA-SBL, nem kérdez) – **teszt kezdő készlet 500–800 l véletlen**.
+- Tankoláskor: CuvAir / Nemes-Török gépnél az összesítő megkérdezi (Igen/Nem, kötelező választani), HA-SEP / HA-SBL esetén kérdés nélkül levonódik.
+- A Tankolások lapon új **M oszlop: „Egyedi készlet”** – ide kerül a cég neve, ha a tankolás az ő egyenlegét terheli.
+  Egyenleg = vásárolt − az M oszlopban hozzá rendelt tankolások összege. Utólag kézzel is átírható/törölhető.
+- A közös tartály-készletet, az óraállást és a többi funkciót **nem érinti**.
+- Az appban a 4. fül (Egyedi készlet): cégenként skála (vásárolt) a maradékkal; a cégre koppintva a hozzá tartozó tankolások.
+  Ideiglenesen „Tesztelés alatt” figyelmeztetés jelenik meg (kikapcsolás: `EGYEDI_TESZT = false`).
+- Vásárlás/feltöltés: a „Vásárolt készlet (l)” cellát kell növelni.
